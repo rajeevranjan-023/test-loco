@@ -1,0 +1,40 @@
+
+.category-card {
+  padding: 32px 24px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+}
+
+.category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  font-size: 1.8rem;
+  background: #eff6ff;
+  border-radius: 50%;
+  margin-bottom: 18px;
+  transition: var(--transition);
+}
+
+.category-card:hover .category-icon {
+  background: var(--color-primary);
+  transform: scale(1.08) rotate(-6deg);
+}
+
+.category-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.category-card p {
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* ---------- Dark mode (addition only, nothing above changed) ---------- */
+[data-theme='dark'] .category-icon {
+  background: #17324d;
+}

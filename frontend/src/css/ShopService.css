@@ -1,0 +1,153 @@
+/* ==========================================================
+   Detail pages: /shop/:shopId and /service/:id
+   Also shared by the search results page's empty/not-found states. */
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px;
+}
+
+.detail-icon {
+  font-size: 2.6rem;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  border-radius: 50%;
+}
+
+.detail-address {
+  color: var(--color-text-light);
+  margin-bottom: 10px;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-tag {
+  background: #f1f5f9;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.detail-body {
+  padding: 32px;
+}
+
+.detail-list {
+  margin: 12px 0 0 20px;
+  color: var(--color-text-light);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-list li {
+  list-style: disc;
+}
+
+.detail-not-found {
+  text-align: center;
+  padding: 60px 0;
+}
+
+.detail-not-found h2 {
+  margin-bottom: 12px;
+}
+
+.detail-not-found p {
+  color: var(--color-text-light);
+  margin-bottom: 24px;
+}
+
+.detail-empty {
+  text-align: center;
+  color: var(--color-text-light);
+  padding: 40px 0;
+}
+
+/* ---------- Plain form fields (Start Yours, dashboard forms) ---------- */
+.detail-body form,
+form.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+}
+
+.detail-body input,
+.detail-body select,
+.detail-body textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.detail-body input:focus,
+.detail-body select:focus,
+.detail-body textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* ---------- Search results page ---------- */
+.search-results-header {
+  padding: 48px 0 0;
+}
+
+.search-results-header h1 {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+
+.search-results-header p {
+  color: var(--color-text-light);
+}
+
+@media (max-width: 640px) {
+  .detail-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .detail-meta {
+    justify-content: center;
+  }
+}
+
+/* ---------- Dark mode (addition only, nothing above changed) ---------- */
+[data-theme='dark'] .detail-icon {
+  background: #17324d;
+}

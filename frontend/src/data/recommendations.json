@@ -1,0 +1,6 @@
+[
+  { "id": 1, "icon": "❄️", "title": "You may need AC servicing", "subtitle": "It's been 6 months since your last service", "cta": "Book AC Service" },
+  { "id": 2, "icon": "🔥", "title": "Popular in your area", "subtitle": "Electricians are trending near Sector 12", "cta": "Explore Electricians" },
+  { "id": 3, "icon": "🎨", "title": "Repaint before the season change", "subtitle": "City Paint House has a seasonal offer", "cta": "View Offer" },
+  { "id": 4, "icon": "🧹", "title": "Deep cleaning, made easy", "subtitle": "Highly rated cleaners available this week", "cta": "Book Cleaning" }
+]

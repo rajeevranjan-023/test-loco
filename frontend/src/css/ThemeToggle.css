@@ -1,0 +1,55 @@
+/* ==========================================================
+   THEME TOGGLE BUTTON*/
+
+.theme-toggle-btn {
+  position: fixed;
+  top: 10px;
+  right: 16px;
+  z-index: 1000;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 14px;
+  border-radius: 999px;
+
+  background: var(--color-card, #ffffff);
+  color: var(--color-text, #1e293b);
+  border: 1px solid var(--color-border, #e2e8f0);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(15, 23, 42, 0.10));
+
+  font-family: var(--font-body, inherit);
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  transition: var(--transition, all 0.25s ease);
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg, 0 16px 40px rgba(15, 23, 42, 0.14));
+  border-color: var(--color-primary, #2563eb);
+}
+
+.theme-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.theme-toggle-label {
+  white-space: nowrap;
+}
+
+@media (max-width: 500px) {
+  .theme-toggle-btn {
+    top: 8px;
+    right: 8px;
+    padding: 8px 10px;
+  }
+
+  .theme-toggle-label {
+    display: none;
+  }
+}
+

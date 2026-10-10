@@ -1,0 +1,352 @@
+/* ==========================================================
+   INSTAGRAM-STYLE PROFILE HEADER
+   ========================================================== */
+
+.ig-banner {
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 20px;
+  background: var(--color-bg);
+}
+
+.ig-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-profile-header {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  padding: 0 0 28px;
+  margin-top: -40px;
+  flex-wrap: wrap;
+}
+
+.ig-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(56, 189, 248, 0.12));
+  border: 3px solid var(--color-card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.ig-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-profile-info {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ig-profile-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.ig-username {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+
+.ig-stats-row {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.ig-stat {
+  font-size: 0.92rem;
+  color: var(--color-text);
+  background: none;
+  border: none;
+}
+
+.ig-stat strong {
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.ig-stat-btn {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ig-stat-btn:hover {
+  color: var(--color-primary);
+}
+
+.ig-name {
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin-bottom: 2px;
+}
+
+.ig-bio {
+  color: var(--color-text-light);
+  font-size: 0.92rem;
+  max-width: 480px;
+}
+
+.follow-btn-following {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+/* ---------- Pill tabs ---------- */
+.ig-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  scrollbar-width: thin;
+}
+
+.ig-tab {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.ig-tab:hover {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.ig-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* ---------- Product grid (Instagram-style) ---------- */
+.ig-products-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ig-products-count {
+  color: var(--color-text-light);
+  font-size: 0.88rem;
+}
+
+.ig-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.ig-product-tile {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-card);
+  transition: var(--transition);
+}
+
+.ig-product-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.ig-product-tile-highlight {
+  border-color: #f59e0b;
+}
+
+.ig-product-tile-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-product-tile-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ig-product-tile-icon {
+  font-size: 2.6rem;
+}
+
+.ig-product-tile-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.ig-product-tile-video-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: none;
+}
+
+.ig-product-tile-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  font-size: 0.9rem;
+}
+
+.ig-product-tile-body {
+  padding: 12px 14px;
+}
+
+.ig-product-tile-body h3 {
+  font-size: 0.94rem;
+  margin-bottom: 4px;
+}
+
+.ig-product-tile-price {
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+}
+
+.ig-product-tile-price span {
+  font-weight: 500;
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+}
+
+.service-showcase-video {
+  margin-bottom: 18px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.service-showcase-video video {
+  width: 100%;
+  max-height: 360px;
+  display: block;
+  background: #000;
+}
+
+/* ---------- Follow list modal ---------- */
+.follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.follow-list-link {
+  color: inherit;
+}
+
+.follow-list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.follow-list-link:hover .follow-list-row {
+  background: var(--color-bg);
+}
+
+.follow-list-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--color-text-light);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.follow-list-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.follow-list-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.follow-list-username {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+}
+
+/* ---------- Instagram profile skeleton ---------- */
+.ig-profile-skeleton {
+  padding-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .ig-banner {
+    height: 120px;
+  }
+  .ig-profile-header {
+    gap: 16px;
+    margin-top: -32px;
+  }
+  .ig-avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 1.8rem;
+  }
+  .ig-stats-row {
+    gap: 18px;
+  }
+}

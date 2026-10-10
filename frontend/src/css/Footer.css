@@ -1,0 +1,66 @@
+
+.site-footer {
+  background: var(--color-secondary);
+  color: rgba(255, 255, 255, 0.75);
+  padding-top: 60px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 32px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footer-col h4 {
+  color: #fff;
+  font-size: 1.05rem;
+  margin-bottom: 18px;
+}
+
+.footer-col ul li {
+  margin-bottom: 10px;
+}
+
+.footer-col ul li a {
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.footer-col ul li a:hover {
+  color: var(--color-accent);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding: 22px 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 1100px) {
+  .footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Dark mode (addition only, nothing above changed) ----------
+   --color-secondary is redefined to a light color in dark mode (it's
+   used as heading TEXT color elsewhere), but here it's used as the
+   footer's BACKGROUND, so it needs its own fixed dark value or the
+   footer would turn light while its text stays white. */
+[data-theme='dark'] .site-footer {
+  background: #020617;
+}

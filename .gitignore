@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local Git metadata backups
+**/.git_backup/
+
+# Test credentials
+backend/study-center-test-account.txt
+credentials.csv
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

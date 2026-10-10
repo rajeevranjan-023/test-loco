@@ -1,0 +1,178 @@
+/* ==========================================================
+   STATIC / INFO PAGES
+   Shared styling for About, Contact, FAQ (and the hero banner
+   also reused by Privacy & Terms). Builds on the CSS variables
+   defined in App.css — nothing here overrides existing files.
+   ========================================================== */
+
+/* ---------- Shared hero banner ---------- */
+.static-hero {
+  padding: 96px 0 56px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.07), transparent);
+}
+
+.static-hero-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.static-hero-eyebrow {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.static-hero h1 {
+  font-size: 2.6rem;
+  margin-bottom: 16px;
+}
+
+.static-hero p {
+  color: var(--color-text-light);
+  font-size: 1.1rem;
+}
+
+/* ---------- Alternate section background ---------- */
+.section-alt {
+  background: var(--color-card);
+}
+
+/* ---------- About page ---------- */
+.about-intro h2 {
+  font-size: 1.9rem;
+  margin-bottom: 16px;
+}
+
+.about-intro p {
+  color: var(--color-text-light);
+  margin-bottom: 14px;
+}
+
+.about-intro,
+.vision-grid,
+.why-grid {
+  align-items: center;
+  gap: 40px;
+}
+
+.feature-card {
+  text-align: left;
+}
+
+.feature-icon {
+  font-size: 1.8rem;
+  margin-bottom: 12px;
+}
+
+.founder-card {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.08));
+}
+
+.benefits-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.benefits-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--color-text-light);
+}
+
+.benefit-check {
+  color: var(--color-primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ---------- Contact page additions ---------- */
+.contact-social {
+  margin-top: 22px;
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.social-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: 0.88rem;
+  color: var(--color-text);
+  transition: var(--transition);
+}
+
+.social-links a:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.form-error {
+  margin: -12px 0 14px;
+  color: #dc2626;
+  font-size: 0.82rem;
+}
+
+.contact-faq-cta {
+  margin-top: 48px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-faq-cta p {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .about-intro,
+  .vision-grid,
+  .why-grid,
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .static-hero {
+    padding: 76px 0 40px;
+  }
+  .static-hero h1 {
+    font-size: 2rem;
+  }
+}
+
+/* ---------- Dark mode (addition only) ---------- */
+[data-theme='dark'] .static-hero {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), transparent);
+}
+
+[data-theme='dark'] .static-hero-eyebrow {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+[data-theme='dark'] .form-error {
+  color: #f87171;
+}

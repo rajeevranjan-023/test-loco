@@ -1,0 +1,104 @@
+/* ==========================================================
+   LOADING UI
+   Spinner (small actions) + generic Skeleton primitives +
+   ready-made shimmer layouts (grid/table/list). Reuses the
+   @keyframes skeleton-shimmer already defined in Home.css.
+   ========================================================== */
+
+/* ---------- Spinner ---------- */
+.lf-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.lf-spinner-ring {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2.5px solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--color-primary);
+  animation: lf-spin 0.7s linear infinite;
+}
+
+.lf-spinner-sm .lf-spinner-ring { width: 14px; height: 14px; border-width: 2px; }
+.lf-spinner-md .lf-spinner-ring { width: 22px; height: 22px; }
+.lf-spinner-lg .lf-spinner-ring { width: 34px; height: 34px; border-width: 3px; }
+
+.lf-spinner-label {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+@keyframes lf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Buttons showing a spinner while submitting */
+.btn .lf-spinner {
+  margin-right: 2px;
+}
+
+.btn .lf-spinner-ring {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+.btn-outline .lf-spinner-ring {
+  border-color: rgba(37, 99, 235, 0.2);
+  border-top-color: var(--color-primary);
+}
+
+/* ---------- Generic skeleton primitive ---------- */
+.lf-skeleton {
+  display: block;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+
+.lf-skeleton-circle {
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lf-skeleton-rect {
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Shimmer table (dashboard lists) ---------- */
+.lf-shimmer-table td {
+  padding: 14px 12px;
+}
+
+/* ---------- Shimmer list (feeds / reviews / requirements) ---------- */
+.lf-shimmer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lf-shimmer-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+}
+
+.lf-shimmer-list-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-theme='dark'] .lf-skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #273548 37%, #1e293b 63%);
+  background-size: 400% 100%;
+}
+
+[data-theme='dark'] .lf-spinner-ring {
+  border-color: rgba(59, 130, 246, 0.2);
+  border-top-color: var(--color-primary);
+}

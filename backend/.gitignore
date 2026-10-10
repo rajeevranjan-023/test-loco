@@ -1,0 +1,11 @@
+node_modules/
+.env
+dist/
+
+study-center-test-account.txt
+
+.env
+.env.*
+!.env.example
+node_modules/
+study-center-test-account.txt

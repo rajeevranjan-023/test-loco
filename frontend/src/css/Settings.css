@@ -1,0 +1,142 @@
+/* ==========================================================
+   SETTINGS PAGE (Instagram-style)
+   ========================================================== */
+
+.settings-container {
+  max-width: 520px;
+}
+
+.settings-title {
+  font-size: 1.6rem;
+  margin-bottom: 24px;
+}
+
+.settings-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.settings-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+.settings-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.settings-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.settings-username {
+  color: var(--color-text-light);
+  font-size: 0.88rem;
+}
+
+.settings-email {
+  color: var(--color-text-light);
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.settings-options {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-card);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row:hover {
+  background: var(--color-bg);
+}
+
+.settings-row-arrow {
+  color: var(--color-text-light);
+}
+
+.settings-row-danger {
+  color: #dc2626;
+}
+
+[data-theme='dark'] .settings-row-danger {
+  color: #f87171;
+}
+
+/* ---------- Profile card with banner (updates live after editing) ---------- */
+.settings-profile-card {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-banner {
+  width: 100%;
+  height: 110px;
+  background: var(--color-bg);
+}
+
+.settings-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.settings-profile-body {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 0 20px 20px;
+  flex-wrap: wrap;
+}
+
+.settings-profile-body .settings-avatar {
+  margin-top: -32px;
+  border: 3px solid var(--color-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-profile-text {
+  flex: 1;
+  min-width: 160px;
+  padding-top: 10px;
+}
+
+.settings-bio {
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+  margin-top: 8px;
+}
+
+.settings-edit-btn {
+  margin-top: 10px;
+}

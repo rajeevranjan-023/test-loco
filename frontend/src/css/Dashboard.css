@@ -1,0 +1,460 @@
+/* ==========================================================
+   DASHBOARD EXTRAS — panel toolbar, table thumbnails, badges,
+   credit/udhar cards, bill cards, sales form, searchable select
+   ========================================================== */
+
+.panel-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.dashboard-table-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-table-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.badge-warning {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .badge-warning {
+  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
+}
+
+/* ---------- Credit / Udhar cards ---------- */
+.credit-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.credit-pin-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-bottom: 16px;
+}
+
+.credit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.credit-card {
+  position: relative;
+  padding: 16px 18px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
+.credit-card-pinned {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.07), transparent);
+}
+
+.credit-card-pin-badge {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.credit-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.credit-card-name {
+  font-weight: 700;
+}
+
+.credit-card-phone {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+}
+
+.credit-card-amount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--color-secondary);
+  margin-bottom: 6px;
+}
+
+.credit-card-notes {
+  font-size: 0.82rem;
+  color: var(--color-text-light);
+  margin-bottom: 10px;
+}
+
+.credit-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- Sales — multi-item bill form ---------- */
+.sale-bill-form {
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+.sale-line-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sale-line-row .searchable-select {
+  flex: 1;
+}
+
+.sale-line-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sale-line-qty input {
+  width: 70px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.sale-line-unit {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  min-width: 34px;
+}
+
+/* ---------- Bill list ---------- */
+.bill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bill-card {
+  padding: 18px 20px;
+}
+
+.bill-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bill-card-customer {
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+}
+
+.bill-card-date {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+}
+
+.bill-card-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bill-card-items li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.bill-card-items li:last-child {
+  border-bottom: none;
+}
+
+.bill-card-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.bill-card-total {
+  text-align: right;
+  font-weight: 800;
+  color: var(--color-secondary);
+  padding-top: 6px;
+}
+
+/* ---------- Searchable select (product picker) ---------- */
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select input {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.searchable-select-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.88rem;
+  background: transparent;
+  border: none;
+}
+
+.searchable-select-option:hover {
+  background: var(--color-bg);
+}
+
+.searchable-select-meta {
+  font-size: 0.74rem;
+  color: var(--color-text-light);
+  flex-shrink: 0;
+}
+
+.searchable-select-empty {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+@media (max-width: 640px) {
+  .sale-line-row {
+    flex-wrap: wrap;
+  }
+  .sale-line-row .searchable-select {
+    flex: 1 1 100%;
+  }
+}
+
+/* ==========================================================
+   BILLING FORM — customer info, product rows, quantity stepper,
+   payment modes, unpaid callout
+   ========================================================== */
+
+.field-optional {
+  font-weight: 400;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+}
+
+.sale-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-light);
+  margin: 18px 0 10px;
+}
+
+.sale-line-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+  margin: -4px 0 16px;
+}
+
+.sale-total-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex: 1;
+}
+
+.sale-total-preview span {
+  font-size: 0.76rem;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sale-total-preview strong {
+  font-size: 1.3rem;
+  color: var(--color-secondary);
+}
+
+/* ---------- Quantity stepper ---------- */
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qty-stepper-btn {
+  width: 32px;
+  height: 38px;
+  background: var(--color-bg);
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.qty-stepper-btn:hover {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-primary);
+}
+
+.qty-stepper-input {
+  width: 44px;
+  height: 38px;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  text-align: center;
+  background: var(--color-card);
+  color: var(--color-text);
+  -moz-appearance: textfield;
+}
+
+.qty-stepper-input::-webkit-outer-spin-button,
+.qty-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ---------- Payment mode toggle ---------- */
+.payment-mode-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.payment-mode-btn {
+  flex: 1;
+  min-width: 160px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.payment-mode-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.payment-mode-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.unpaid-callout {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.unpaid-callout p {
+  margin-bottom: 8px;
+  font-size: 0.94rem;
+}
+
+.bill-card-unpaid {
+  color: #b45309;
+  font-weight: 700;
+}
+
+[data-theme='dark'] .bill-card-unpaid {
+  color: #fbbf24;
+}
+
+/* ---------- Credit card explicit pin button ---------- */
+.credit-card-pin-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  opacity: 0.55;
+  transition: var(--transition);
+}
+
+.credit-card-pin-btn:hover:not(:disabled) {
+  opacity: 1;
+  border-color: #f59e0b;
+  transform: scale(1.08);
+}
+
+.credit-card-pin-btn.active {
+  opacity: 1;
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.credit-card-pin-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}

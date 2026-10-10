@@ -1,0 +1,264 @@
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 76px;
+}
+
+/* ---------- Logo ---------- */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--color-secondary);
+}
+
+.logo-icon {
+  width: 35px;   
+  height: 35px;
+  object-fit: cover;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.logo-highlight {
+  color: #FF7A00;
+}
+
+/* ---------- Nav links ---------- */
+.navbar .nav-list {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-link {
+  position: relative;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  padding: 6px 0;
+  transition: var(--transition);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0%;
+  height: 2px;
+  background: var(--color-primary);
+  transition: var(--transition);
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--color-primary);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Buttons styled to look like the nav links above (Home / Analytic View / Account) */
+.nav-link-btn {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- Search Servop (UI only, no functionality yet) ---------- */
+.nav-search-item {
+  display: flex;
+  align-items: center;
+}
+
+.nav-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  min-width: 180px;
+}
+
+.nav-search-icon {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.nav-search-box input {
+  border: none;
+  background: transparent;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  width: 100%;
+  padding: 0;
+}
+
+.nav-search-box input:focus {
+  outline: none;
+}
+
+/* ---------- Header actions ---------- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------- Messages/Requirements icon ---------- */
+.messages-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  transition: var(--transition);
+}
+
+.messages-icon-btn:hover {
+  background: var(--color-bg);
+}
+
+.messages-icon-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 2px solid var(--color-card);
+}
+
+/* ---------- Hamburger (mobile only) ---------- */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+}
+
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--color-secondary);
+  border-radius: 2px;
+  transition: var(--transition);
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .navbar {
+    position: absolute;
+    top: 76px;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border-bottom: 1px solid var(--color-border);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+
+  .navbar.open {
+    max-height: 400px;
+  }
+
+  .navbar .nav-list {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 8px 24px 16px;
+  }
+
+  .navbar .nav-list li {
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .navbar .nav-list li:last-child {
+    border-bottom: none;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 14px 0;
+  }
+
+  .nav-search-item {
+    padding: 14px 0;
+  }
+
+  .nav-search-box {
+    width: 100%;
+  }
+
+  .header-login {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+@media (max-width: 500px) {
+  .header-signup {
+    display: none;
+  }
+}
+
+/* ---------- Dark mode (addition only, nothing above changed) ---------- */
+[data-theme='dark'] .site-header {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+@media (max-width: 900px) {
+  [data-theme='dark'] .navbar {
+    background: #0f172a;
+  }
+}

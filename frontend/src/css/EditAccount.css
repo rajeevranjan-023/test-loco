@@ -1,0 +1,52 @@
+/* ==========================================================
+   EDIT ACCOUNT (Instagram-style edit profile)
+   ========================================================== */
+
+.edit-account-field {
+  margin-bottom: 18px;
+}
+
+.edit-account-label {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px !important;
+}
+
+.edit-account-pencil {
+  font-size: 0.75rem;
+  opacity: 0.45;
+}
+
+.edit-account-field:focus-within .edit-account-pencil {
+  opacity: 1;
+}
+
+/* Tighten the generic modal input spacing — each field row owns its spacing. */
+.edit-account-field input,
+.edit-account-field textarea {
+  margin-bottom: 4px !important;
+}
+
+.edit-account-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+  margin: 2px 0 0;
+}
+
+.edit-account-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin: 2px 0 0;
+}
+
+[data-theme='dark'] .edit-account-error {
+  color: #f87171;
+}
+
+.edit-account-counter {
+  text-align: right;
+  font-size: 0.74rem;
+  color: var(--color-text-light);
+  margin: 0;
+}

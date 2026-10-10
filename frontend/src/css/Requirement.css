@@ -1,0 +1,116 @@
+/* ==========================================================
+   REQUIREMENT SYSTEM
+   ========================================================== */
+
+.requirement-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.requirement-page-sub {
+  color: var(--color-text-light);
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+
+.requirement-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.requirement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.requirement-card {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+}
+
+.requirement-card-image {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.requirement-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.requirement-card-top {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.requirement-card-body h3 {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.requirement-card-desc {
+  color: var(--color-text-light);
+  font-size: 0.92rem;
+  margin-bottom: 10px;
+}
+
+.requirement-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.82rem;
+  color: var(--color-text-light);
+  margin-bottom: 10px;
+}
+
+.requirement-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.requirement-responded-note {
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ---------- Image upload field (shared) ---------- */
+.image-upload-field {
+  margin-bottom: 16px;
+}
+
+.image-upload-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.image-upload-preview img {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .requirement-card {
+    flex-direction: column;
+  }
+  .requirement-card-image {
+    width: 100%;
+    height: 160px;
+  }
+}

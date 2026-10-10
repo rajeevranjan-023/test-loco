@@ -1,0 +1,104 @@
+[
+  {
+    "category": "Account & Login",
+    "icon": "🔐",
+    "questions": [
+      {
+        "q": "How do I create an account on SERVOP?",
+        "a": "Click 'Sign Up' in the top-right corner, enter your name, email and a password, and you're in. You can start browsing right away — you only need to add more details if you plan to sell products or list a service."
+      },
+      {
+        "q": "I forgot my password. How do I reset it?",
+        "a": "On the Login page, click 'Forgot password?' and follow the instructions sent to your registered email to set a new one."
+      },
+      {
+        "q": "Can I change my username or profile details later?",
+        "a": "Yes. Once logged in, open your profile settings to update your name, username, contact details and photo at any time."
+      },
+      {
+        "q": "How do I delete my account?",
+        "a": "Contact us through the Support page and we'll process your deletion request, including removal of your personal data, within a few business days."
+      }
+    ]
+  },
+  {
+    "category": "Buying / Services",
+    "icon": "🛍️",
+    "questions": [
+      {
+        "q": "How do I find products or services near me?",
+        "a": "Use the search bar on the homepage or tap 'Use My Location' — SERVOP shows nearby shops, service providers and trending products, ranked by distance and relevance."
+      },
+      {
+        "q": "How do I contact a seller or service provider?",
+        "a": "Open any shop, product or service page and use the contact details or 'Book Now' / 'Contact' button shown on that profile."
+      },
+      {
+        "q": "Can I compare prices between shops?",
+        "a": "Yes. Search results and shop pages sort products by price so you can quickly spot the cheapest and best-value options nearby."
+      },
+      {
+        "q": "What if a seller doesn't respond or the listing looks incorrect?",
+        "a": "Report it from the listing page or reach out via our Support page and our team will look into it."
+      }
+    ]
+  },
+  {
+    "category": "Seller & Service Provider",
+    "icon": "🏪",
+    "questions": [
+      {
+        "q": "How do I list my shop, products or services on SERVOP?",
+        "a": "Click 'Start Yours' from the More menu after logging in, choose Shop or Service Provider, and follow the guided setup to add your details, products and pricing."
+      },
+      {
+        "q": "Is there a fee to list my business?",
+        "a": "Creating a basic listing is free. Optional premium visibility features, where available, are clearly marked with their pricing before you opt in."
+      },
+      {
+        "q": "How do I manage my products, sales and analytics?",
+        "a": "Once you're set up as a seller, switch to Analytics View from the header to access your dashboard for products, sales tracking and performance insights."
+      },
+      {
+        "q": "Can I switch between using SERVOP as a buyer and as a seller?",
+        "a": "Yes. Use the 'Switch to Consumer View' / 'Switch to Analytics View' toggle in the header to move between the two seamlessly."
+      }
+    ]
+  },
+  {
+    "category": "Payments",
+    "icon": "💳",
+    "questions": [
+      {
+        "q": "Does SERVOP process payments between buyers and sellers?",
+        "a": "SERVOP is primarily a discovery platform connecting you with local shops and service providers. Payment is typically arranged directly with the seller unless a listing states otherwise."
+      },
+      {
+        "q": "Is my payment information stored on SERVOP?",
+        "a": "We don't store full card details on our servers. Any optional in-platform payments are processed through secure, PCI-compliant third-party payment providers."
+      },
+      {
+        "q": "How do refunds work?",
+        "a": "Refunds for products or services purchased directly from a seller follow that seller's own refund policy. Contact Support if you need help resolving a dispute."
+      }
+    ]
+  },
+  {
+    "category": "Technical Issues",
+    "icon": "🛠️",
+    "questions": [
+      {
+        "q": "The website isn't loading properly. What should I do?",
+        "a": "Try refreshing the page, clearing your browser cache, or switching browsers. If the issue persists, let us know through the Support page with a screenshot if possible."
+      },
+      {
+        "q": "I found a bug or something looks broken.",
+        "a": "We'd love to know! Use the Contact & Support page to describe what happened and which page it occurred on — our team reviews every report."
+      },
+      {
+        "q": "Does SERVOP work on mobile devices?",
+        "a": "Yes, the entire platform is fully responsive and works smoothly on phones, tablets and desktops."
+      }
+    ]
+  }
+]
