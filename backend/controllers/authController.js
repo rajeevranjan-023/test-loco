@@ -1,4 +1,7 @@
 import User from '../models/User.js'
+import jwt from 'jsonwebtoken'
+import RevokedToken from '../models/RevokedToken.js'
+import { tokenHash } from '../middleware/auth.js'
 import Shop from '../models/Shop.js'
 import ServiceProvider from '../models/ServiceProvider.js'
 import { findAccountByUser } from '../utils/accounts.js'
@@ -167,3 +170,13 @@ export const updateLocation = asyncHandler(async (req, res) => {
 })
 // _________________________________________________________________________
 // =========================================================================
+
+// POST /api/auth/logout  (protected)
+// Ends THIS session only (the token that made the request) — other devices stay logged in. The token is recorded as revoked, so
+// a stale copy (another tab, bfcache, a copied header) can no longer authenticate, even before its 30-day expiry.
+export const logout = asyncHandler(async (req, res) => {
+  const token = String(req.headers.authorization || '').split(' ')[1]
+  const exp = jwt.decode(token)?.exp
+  await RevokedToken.updateOne({ hash: tokenHash(token) }, { $setOnInsert: { userId: req.user._id, expiresAt: new Date((exp || Math.floor(Date.now() / 1000) + 30 * 86400) * 1000) } }, { upsert: true })
+  res.json({ ok: true })
+})

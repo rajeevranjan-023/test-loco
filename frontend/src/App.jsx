@@ -14,6 +14,8 @@ import StartYours from './features/seller/StartYours.jsx'
 import { Module } from './features/modules.jsx'
 import UnifiedProfilePage from './features/profile/UnifiedProfilePage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import SessionBoundary from './components/SessionBoundary.jsx'
+import PersonalActivityPage from './features/activity/PersonalActivityPage.jsx'
 import { UsernameShell, RedirectToProfile } from './components/UsernameRoute.jsx'
 import LegacyOwnerRedirect from './components/LegacyOwnerRedirect.jsx'
 import About from './pages/About.jsx'
@@ -27,6 +29,7 @@ import Settings from './pages/Settings.jsx'
 function App() {
   return (
     <div className="app-wrapper">
+      <SessionBoundary>
       <Routes>
         {/* Authentication & onboarding: full-page experience with its own header (no site Navbar/Footer) */}
         <Route path="/login" element={<AuthPage mode="login" />} />
@@ -48,6 +51,8 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/requirements" element={<Requirements />} />
           <Route path="/settings" element={<Settings />} />
+          {/* Personal activity / analytics for accounts without a business (business owners keep their merchant analytics) */}
+          <Route path="/activity" element={<ProtectedRoute><PersonalActivityPage /></ProtectedRoute>} />
           {/* Legacy global dashboard URLs: never rendered, only forwarded to /@username/… (or /login). */}
           <Route path="/analytics/*" element={<LegacyOwnerRedirect />} />
           <Route path="/customer/*" element={<LegacyOwnerRedirect />} />
@@ -88,6 +93,7 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      </SessionBoundary>
     </div>
   )
 }

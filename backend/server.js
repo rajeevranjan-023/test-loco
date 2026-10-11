@@ -27,6 +27,8 @@ if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PRO
 
 app.use(cors())
 app.use(express.json())
+// Anything answered to an authenticated request is private: never let a browser/proxy cache reuse it for another account.
+app.use('/api', (req, res, next) => { if (req.headers.authorization) { res.set('Cache-Control', 'no-store'); res.vary('Authorization') } next() })
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
 }

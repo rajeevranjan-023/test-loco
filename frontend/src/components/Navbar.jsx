@@ -1,31 +1,39 @@
 import React from 'react'
-import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useViewMode } from '../context/ViewModeContext.jsx'
-import Img from './Img.jsx'
-import { stripAt, profilePath } from '../utils/username.js'
+import { Link } from 'react-router-dom'
+import { profilePath } from '../utils/username.js'
 import { loginUrl } from '../utils/redirect.js'
+import AppMenu from './menus/AppMenu.jsx'
+import UserMenu from './menus/UserMenu.jsx'
 
+// Header:  [Loco logo → application menu]   Home · Search · Analytics   🔔  [avatar → personal account menu]
 export default function Navbar() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isSeller } = useAuth()
-  const { goHome, goAnalytics, viewMode } = useViewMode()
+  const { goHome, viewMode } = useViewMode()
   const { pathname } = useLocation()
   const onHome = pathname === '/'
+  const ownerBase = user?.username ? profilePath(user.username) : null
+  const merchant = isAuthenticated && isSeller && !!ownerBase // decided from the real account, not a flag
+
+  // Analytics follows the account: a business owner keeps the existing merchant analytics; everybody else gets their personal activity.
+  const openAnalytics = () => {
+    if (!isAuthenticated) return navigate(loginUrl('/activity'))
+    navigate(merchant ? profilePath(user.username, 'dashboard') : '/activity')
+  }
 
   const items = [
     { label: 'Home', icon: '🏠', onClick: () => { goHome(); navigate('/') }, active: onHome && viewMode !== 'seller' },
     { label: 'Search', icon: '🔍', onClick: () => navigate('/search') },
-    { label: 'Analytics', icon: '📊', onClick: () => { if (isSeller && user?.username) navigate(profilePath(user.username, 'dashboard')); else navigate('/start-yours') }, active: !!user?.username && pathname.startsWith(`${profilePath(user.username)}/`) },
+    { label: 'Analytics', icon: '📊', onClick: openAnalytics, active: merchant ? pathname.startsWith(`${ownerBase}/`) : pathname === '/activity' },
   ]
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-100 bg-white">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <Img src="logo.png" alt="Loco" className="h-8 w-8 rounded-full !bg-transparent" eager />
-          <span className="leading-none"><span className="block text-lg font-semibold text-orange-500">Loco</span><span className="text-[9px] text-gray-500">Local Finder</span></span>
-        </Link>
+        <AppMenu />
         <button type="button" className="hidden items-center gap-2 rounded-full bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 sm:flex">
           📍 Bhopal, Madhya Pradesh ⌄
         </button>
@@ -39,13 +47,7 @@ export default function Navbar() {
         </nav>
         <div className="ml-auto flex items-center gap-4 md:ml-0">
           <Link to="/requirements" aria-label="Requirements" className="relative text-lg">🔔<span className="absolute -right-0.5 top-0 h-2 w-2 rounded-full bg-red-500" /></Link>
-          {isAuthenticated ? (
-            <NavLink to={user.username ? profilePath(user.username) : '/start-yours'} className="flex items-center gap-2 text-sm font-semibold">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-orange-100 text-xs font-semibold text-orange-600">{user.name[0]}</span>{user.name.split(' ')[0]} ⌄
-            </NavLink>
-          ) : (
-            <Link to={loginUrl(pathname)} className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white">Login</Link>
-          )}
+          <UserMenu />
         </div>
       </div>
     </header>

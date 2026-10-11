@@ -1,14 +1,21 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useAuth } from './AuthContext.jsx'
 
 const ViewModeContext = createContext(null)
 
 export function ViewModeProvider({ children }) {
-  const { isSeller } = useAuth()
+  const { isSeller, epoch } = useAuth()
   // First-time visitors (nothing in localStorage yet) land on the normal
   // consumer homepage — 'seller' is only ever reached by explicitly
   // clicking "Analytic View", at which point it's persisted here.
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('lf_view_mode') || 'consumer')
+
+  // A different account must never inherit the previous account's view mode (logout also clears the stored value).
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) { first.current = false; return }
+    setViewMode(localStorage.getItem('lf_view_mode') || 'consumer')
+  }, [epoch])
 
   useEffect(() => {
     if (isSeller) {

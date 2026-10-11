@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTitle } from '../hooks/title.js'
 import { useFeedback } from '../hooks/useFeedback.js'
@@ -17,7 +17,8 @@ function Settings() {
   useTitle('Settings')
   const { user, isAuthenticated, isSeller, logout } = useAuth()
   const navigate = useNavigate()
-  const [showEdit, setShowEdit] = useState(false)
+  const [params] = useSearchParams()
+  const [showEdit, setShowEdit] = useState(() => params.get('edit') === '1') // the avatar menu's "Edit profile" opens the existing editor straight away
   const { feedback, showSuccess } = useFeedback()
 
   const handleLogout = () => {

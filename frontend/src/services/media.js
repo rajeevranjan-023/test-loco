@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { BASE_URL } from './api.js'
+import { getToken } from './session.js'
 
 /**
  * Uploads a single image/video File to POST /api/media/upload.
@@ -7,7 +8,7 @@ import { BASE_URL } from './api.js'
  * `onProgress(percent)` is called as the upload streams, for a progress bar.
  */
 export async function uploadMedia(file, folder, onProgress) {
-  const token = localStorage.getItem('lf_token')
+  const token = getToken()
   const formData = new FormData()
   formData.append('file', file)
   formData.append('folder', folder)

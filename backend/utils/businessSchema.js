@@ -1,15 +1,3 @@
-// THE business-type registry. One common application, many business schemas.
-//
-//   User.sellerType  ('shop' | 'service' | 'study_center')   ← the ONLY thing that picks a schema
-//        ↓
-//   schemaFor(sellerType)  →  terms · navigation · modules · add-menu · billing item types · dashboard & analytics config
-//        ↓
-//   publicBusiness(sellerType, account)  →  the serialisable subset sent to the frontend with /api/seller/summary
-//
-// Nothing in here (or anywhere that reads it) is keyed on a username, shop name or id. To add a new kind of
-// business: add a schema below + an account model in utils/accounts.js. Shop and Service schemas reproduce
-// the pre-existing screens word-for-word, so those accounts behave exactly as before.
-
 export const BUSINESS_TYPES = ['shop', 'service', 'study_center']
 
 // ───────── terminology ─────────

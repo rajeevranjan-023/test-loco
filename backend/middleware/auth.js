@@ -1,8 +1,14 @@
+import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import RevokedToken from '../models/RevokedToken.js'
 import { findAccountByUser } from '../utils/accounts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { normalizeUsername } from '../utils/username.js'
+
+// Identity of a logged-out token (its hash — works for every token ever issued, no change to how tokens are made).
+export const tokenHash = (token) => crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 40)
+export const isRevoked = async (token) => !!(await RevokedToken.exists({ hash: tokenHash(token) }))
 
 // _________________________________________________________________________________
 // =================================================================================
@@ -16,6 +22,9 @@ export const protect = asyncHandler(async (req, res, next) => {   // is user log
   try {
     const token = header.split(' ')[1]
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    if (await isRevoked(token)) {   // logged out — a stale copy of this token must never restore the session
+      return res.status(401).json({ message: 'Session expired or invalid, please log in again.' })
+    }
     const user = await User.findById(decoded.id)
     if (!user) {
       return res.status(401).json({ message: 'User no longer exists.' })
@@ -41,7 +50,7 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   try {
     const token = header.split(' ')[1]
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = await User.findById(decoded.id)
+    const user = (await isRevoked(token)) ? null : await User.findById(decoded.id)
     if (user) req.user = user
   } catch (err) {
     // Invalid/expired token on a public route — just proceed as a guest.

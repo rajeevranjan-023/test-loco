@@ -1,5 +1,5 @@
 import express from 'express'
-import { register, login, getMe, updateMe, updateLocation } from '../controllers/authController.js'
+import { register, login, logout, getMe, updateMe, updateLocation } from '../controllers/authController.js'
 import { googleStart, googleCallback, googleExchange, googleLink } from '../controllers/googleAuthController.js'
 import {
   requireRegistration, startEmailRegistration, getRegistrationSession, submitPersonalInfo, resendOtp, verifyRegistrationOtp,
@@ -17,6 +17,7 @@ const MIN = 60 * 1000
 router.post('/register', register)   // legacy; disabled outside tests unless ALLOW_LEGACY_REGISTER=true (see authController)
 router.post('/login', rateLimit({ name: 'login', windowMs: 15 * MIN, max: 20, message: 'Too many login attempts. Try again in a few minutes.' }), login)
 router.get('/me', protect, getMe)
+router.post('/logout', protect, logout)
 router.patch('/me', protect, updateMe)
 router.patch('/location', protect, updateLocation)
 

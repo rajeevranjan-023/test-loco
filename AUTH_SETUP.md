@@ -49,3 +49,16 @@ See `backend/.env.example` (all documented). Minimum for local dev: `MONGODB_URI
 ## Tests
 - `cd backend && MONGODB_URI=mongodb://127.0.0.1:27017/loco_auth npm run test:auth` — 96 backend checks (needs a Mongo-compatible DB).
 - `npm run e2e:server` starts a harness API on :5000 (fake Google chooser only) for browser testing.
+
+---
+## Sessions, account switching and the Back button
+* **One session module** — `frontend/src/services/session.js` holds the token (memory + `localStorage.lf_token`), an *epoch* that increments on every
+  identity change, and aborts in-flight authenticated requests when it does. `api.js` drops any answer that belongs to an older epoch.
+* **`AuthContext`** re-syncs the tab when another tab logs in/out (`storage` event), when the page comes back from the back/forward cache
+  (`pageshow`), and when the server answers 401 for the tab's own token. `<SessionBoundary>` re-creates the page tree on every identity change.
+* **Logout** calls `POST /api/auth/logout` (the token's hash goes into `RevokedToken`, TTL = token expiry), then clears account-specific
+  browser state (`lf_token`, `lf_view_mode`, `lf_seller_prefs`, pending action). Public preferences (city, theme) are kept.
+* **Header** — Loco logo = application menu (`components/menus/AppMenu.jsx`); avatar = personal account menu (`UserMenu.jsx`);
+  Analytics = merchant dashboard for business owners, `/activity` (personal overview) for everyone else.
+* Tests: `backend: node tests/session.logout.test.js` · `frontend: npm test` (session.repro / session.ui / menus). In an environment without
+  vite binaries: `node --import ./tests/_harness/register.mjs tests/_harness/run.mjs tests/<file>.test.jsx` (one file per process).
