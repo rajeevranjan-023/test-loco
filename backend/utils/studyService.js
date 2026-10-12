@@ -4,11 +4,11 @@
 import mongoose from 'mongoose'
 import Customer from '../models/Customer.js'
 import Udhar from '../models/Udhar.js'
-import Seat from '../models/Seat.js'
-import StudyMember from '../models/StudyMember.js'
-import Membership from '../models/Membership.js'
-import SeatAssignment from '../models/SeatAssignment.js'
-import StudyCenter from '../models/StudyCenter.js'
+import Seat from '../models/library/Seat.js'
+import StudyMember from '../models/library/StudyMember.js'
+import Membership from '../models/library/Membership.js'
+import SeatAssignment from '../models/library/SeatAssignment.js'
+import StudyCenter from '../models/library/StudyCenter.js'
 import { normSlot, findConflict, seatState, seatSort, dueAge, memberStatus, DEFAULT_WINDOW, slotLabel, addMonths, renewalStart, STATE_COLOR } from './studyLogic.js'
 
 const oid = (x) => (x && x._id ? x._id : x)

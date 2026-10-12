@@ -1,7 +1,7 @@
 import User from '../models/User.js'
 import Shop from '../models/Shop.js'
 import ServiceProvider from '../models/ServiceProvider.js'
-import StudyCenter from '../models/StudyCenter.js'
+import StudyCenter from '../models/library/StudyCenter.js'
 import { findAccountByUser } from '../utils/accounts.js'
 import { schemaFor, publicBusiness } from '../utils/businessSchema.js'
 import { asyncHandler } from '../utils/asyncHandler.js'

@@ -67,14 +67,15 @@ console.log(`\n${n} seed tests passed · members ${d.members.length} · bills ${
 // ── every generated document must pass its real Mongoose schema ──
 const { default: User } = await import('../models/User.js')
 const models = { seats: 'Seat', members: 'StudyMember', memberships: 'Membership', assignments: 'SeatAssignment', courses: 'Course', enrollments: 'Enrollment', customers: 'Customer', bills: 'Bill', udhars: 'Udhar', history: 'UdharHistory', drafts: 'BillDraft', billCounters: 'BillCounter' }
+const modelDir = { Seat: 'library/', StudyMember: 'library/', Membership: 'library/', SeatAssignment: 'library/', Course: 'library/', Enrollment: 'library/' } // models now live in models/<module>/
 for (const [key, name] of Object.entries(models)) {
-  const { default: M } = await import(`../models/${name}.js`)
+  const { default: M } = await import(`../models/${modelDir[name] || ''}${name}.js`)
   let bad = 0
   for (const doc of d[key]) { const err = new M(doc).validateSync(); if (err) { bad++; if (bad === 1) console.error(name, Object.values(err.errors).map((e) => e.message)) } }
   assert.equal(bad, 0, `${name}: ${bad} invalid documents`)
   console.log('✅ schema-valid:', name, d[key].length)
 }
-const { default: Center } = await import('../models/StudyCenter.js')
+const { default: Center } = await import('../models/library/StudyCenter.js')
 const cErr = new Center({ userId: new mongoose.Types.ObjectId(), username: '@brightstudy238', centerName: 'Bright Study Center', ownerName: 'x', phone: '9876500102', config: d.config }).validateSync()
 assert.ok(!cErr, 'StudyCenter doc'); console.log('✅ schema-valid: StudyCenter')
 const u = new User({ name: 'Rajeev Kumar', email: 'demo.study@example.com', username: '@brightstudy238', password: 'StudyCenter@123', role: 'seller', sellerType: 'study_center' })

@@ -9,11 +9,11 @@
 //
 // Shop and Service have no hooks: their bills behave exactly as before.
 import mongoose from 'mongoose'
-import Course from '../models/Course.js'
-import Enrollment from '../models/Enrollment.js'
-import Membership from '../models/Membership.js'
-import SeatAssignment from '../models/SeatAssignment.js'
-import StudyMember from '../models/StudyMember.js'
+import Course from '../models/library/Course.js'
+import Enrollment from '../models/library/Enrollment.js'
+import Membership from '../models/library/Membership.js'
+import SeatAssignment from '../models/library/SeatAssignment.js'
+import StudyMember from '../models/library/StudyMember.js'
 import { ensureMember, createMembership, assertSlotFree, windowOf } from './studyService.js'
 import { normSlot } from './studyLogic.js'
 

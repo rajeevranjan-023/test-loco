@@ -6,9 +6,9 @@
 import Bill from '../models/Bill.js'
 import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'
-import StudyMember from '../models/StudyMember.js'
-import Membership from '../models/Membership.js'
-import SeatAssignment from '../models/SeatAssignment.js'
+import StudyMember from '../models/library/StudyMember.js'
+import Membership from '../models/library/Membership.js'
+import SeatAssignment from '../models/library/SeatAssignment.js'
 import { seatBoard, memberRows, windowOf } from './studyService.js'
 import { toMin, DAY, dueAge } from './studyLogic.js'
 

@@ -1,6 +1,6 @@
 import Shop from '../models/Shop.js'
 import ServiceProvider from '../models/ServiceProvider.js'
-import StudyCenter from '../models/StudyCenter.js'
+import StudyCenter from '../models/library/StudyCenter.js'
 
 // sellerType → the account model. This is the ONE place that knows which collection holds which kind of business.
 // Unknown / null sellerType falls back to ServiceProvider, exactly as the previous `sellerType === 'shop' ? Shop : ServiceProvider` did.
