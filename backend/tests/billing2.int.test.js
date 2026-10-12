@@ -5,9 +5,9 @@ process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
 const { default: app } = await import('../server.js')
 const { default: mongoose } = await import('mongoose')
 const { connectDB } = await import('../config/db.js')
-const { default: BillCounter } = await import('../models/BillCounter.js')
-const { default: Bill } = await import('../models/Bill.js')
-const { default: Sale } = await import('../models/Sale.js')
+const { default: BillCounter } = await import('../models/common/BillCounter.js')
+const { default: Bill } = await import('../models/common/Bill.js')
+const { default: Sale } = await import('../models/common/Sale.js')
 { const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'billing2.int') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
 let n = 0; BillCounter.findOneAndUpdate = async () => ({ series: 'B', count: 201 + n++ })
@@ -147,7 +147,7 @@ r = await req('PATCH', `/api/seller/orders/${nonCharge.billId}/status`, { status
 ok(r.status === 200 && await stock(clean._id) === c1 + 2, 'cancelling a bill with non-chargeable material returns the stock (+2)')
 
 // ── cancellation reverses the financial record too (udhar balance) and keeps the bill for audit
-const { default: Udhar } = await import('../models/Udhar.js'); const { default: Customer } = await import('../models/Customer.js')
+const { default: Udhar } = await import('../models/common/Udhar.js'); const { default: Customer } = await import('../models/common/Customer.js')
 const sita = await Customer.findOne({ name: 'Sita' }); const beforeU = (await Udhar.findOne({ customerId: sita._id }))?.totalAmount
 r = await req('GET', '/api/seller/billing/recent', null, T); const sitaBill = r.data.find((x) => x.customer === 'Sita')
 r = await req('PATCH', `/api/seller/orders/${sitaBill.billId}/status`, { status: 'Cancelled' }, T)

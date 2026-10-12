@@ -37,10 +37,10 @@ const CREDENTIALS_FILE = path.join(__dirname, 'credentials.csv')
 // ---------------------------------------------------------------------------
 // 4. MODELS
 // ---------------------------------------------------------------------------
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import Shop from '../models/shop/Shop.js'
-import Product from '../models/Product.js'
-import Sale from '../models/Sale.js'
+import Product from '../models/common/Product.js'
+import Sale from '../models/common/Sale.js'
 import Credit from '../models/shop/Credit.js'
 import ServiceProvider from '../models/services/ServiceProvider.js'
 import { assertDevSeedAllowed, redactUri } from './guard.js'

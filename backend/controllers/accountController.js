@@ -1,4 +1,4 @@
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { ACCOUNT_TYPES, INTERESTS, EMAIL_RE, clientOrigin, randomToken, sha256, validatePassword } from '../utils/authHelpers.js'
 import { normalizeUsername } from '../utils/username.js'

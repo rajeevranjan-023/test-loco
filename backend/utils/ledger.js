@@ -1,7 +1,7 @@
-import Udhar from '../models/Udhar.js'
-import UdharHistory from '../models/UdharHistory.js'
-import Customer from '../models/Customer.js'
-import Bill from '../models/Bill.js'
+import Udhar from '../models/common/Udhar.js'
+import UdharHistory from '../models/common/UdharHistory.js'
+import Customer from '../models/common/Customer.js'
+import Bill from '../models/common/Bill.js'
 
 export const r2 = (n) => Math.round(n * 100) / 100
 export const EPS = 0.005

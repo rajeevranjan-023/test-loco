@@ -1,4 +1,4 @@
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import jwt from 'jsonwebtoken'
 import RevokedToken from '../models/RevokedToken.js'
 import { tokenHash } from '../middleware/auth.js'

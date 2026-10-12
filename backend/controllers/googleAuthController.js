@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import AuthTicket from '../models/AuthTicket.js'
 import RegistrationSession from '../models/RegistrationSession.js'
 import { googleOAuth } from '../utils/googleOAuth.js'

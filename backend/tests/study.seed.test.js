@@ -65,9 +65,9 @@ const sum = { occupied: 0, partial: 0, empty: 0, unavailable: 0 }; d.seats.forEa
 console.log(`\n${n} seed tests passed · members ${d.members.length} · bills ${d.bills.length} · seats`, sum, '· drafts', d.drafts.length)
 
 // ── every generated document must pass its real Mongoose schema ──
-const { default: User } = await import('../models/User.js')
+const { default: User } = await import('../models/common/User.js')
 const models = { seats: 'Seat', members: 'StudyMember', memberships: 'Membership', assignments: 'SeatAssignment', courses: 'Course', enrollments: 'Enrollment', customers: 'Customer', bills: 'Bill', udhars: 'Udhar', history: 'UdharHistory', drafts: 'BillDraft', billCounters: 'BillCounter' }
-const modelDir = { Seat: 'library/', StudyMember: 'library/', Membership: 'library/', SeatAssignment: 'library/', Course: 'library/', Enrollment: 'library/' } // models now live in models/<module>/
+const modelDir = { Seat: 'library/', StudyMember: 'library/', Membership: 'library/', SeatAssignment: 'library/', Course: 'library/', Enrollment: 'library/', Customer: 'common/', Bill: 'common/', Udhar: 'common/', UdharHistory: 'common/', BillDraft: 'common/', BillCounter: 'common/' } // models now live in models/<module>/
 for (const [key, name] of Object.entries(models)) {
   const { default: M } = await import(`../models/${modelDir[name] || ''}${name}.js`)
   let bad = 0

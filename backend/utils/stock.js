@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import Product from '../models/Product.js'
+import Product from '../models/common/Product.js'
 import Counter from '../models/Counter.js'
 
 // =====================================================================================================

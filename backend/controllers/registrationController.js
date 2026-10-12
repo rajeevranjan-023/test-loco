@@ -1,4 +1,4 @@
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import RegistrationSession from '../models/RegistrationSession.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { generateToken } from '../utils/generateToken.js'

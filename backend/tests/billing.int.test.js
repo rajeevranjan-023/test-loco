@@ -5,9 +5,9 @@ process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
 const { default: app } = await import('../server.js')
 const { default: mongoose } = await import('mongoose')
 const { connectDB } = await import('../config/db.js')
-const { default: BillCounter } = await import('../models/BillCounter.js')
-const { default: Bill } = await import('../models/Bill.js')
-const { default: Sale } = await import('../models/Sale.js')
+const { default: BillCounter } = await import('../models/common/BillCounter.js')
+const { default: Bill } = await import('../models/common/Bill.js')
+const { default: Sale } = await import('../models/common/Sale.js')
 { const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'billing.int') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
 let n = 0; BillCounter.findOneAndUpdate = async () => ({ series: 'A', count: 101 + n++ }) // stub (needs real MongoDB ≥4.2 otherwise)

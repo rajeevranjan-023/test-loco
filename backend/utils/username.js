@@ -104,7 +104,7 @@ export const isValidUsernameFormat = (raw) =>
 // Shared username availability check.
 // Used by seller onboarding and Edit Account.
 export async function assertUsernameAvailable(rawUsername) {
-  const { default: User } = await import('../models/User.js');
+  const { default: User } = await import('../models/common/User.js');
 
   const validation = validateUsernameRules(rawUsername);
 

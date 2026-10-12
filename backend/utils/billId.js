@@ -1,4 +1,4 @@
-import BillCounter from '../models/BillCounter.js'
+import BillCounter from '../models/common/BillCounter.js'
 
 // Bill ID:  #<YY><MM><DD><SERIES><COUNT>      e.g. #261003A0101
 //
@@ -103,7 +103,7 @@ export function displayBillId(billId, legacyPrefix = '#') {
 // Old databases have a GLOBAL unique index on billId. New ids repeat across shops (every shop has an A0101),
 // so uniqueness must be per shop. Safe to run on every boot.
 export async function ensureBillIndexes() {
-  const { default: Bill } = await import('../models/Bill.js')
+  const { default: Bill } = await import('../models/common/Bill.js')
   try { await Bill.collection.dropIndex('billId_1') } catch { /* already gone / never existed */ }
   await Bill.syncIndexes().catch(() => Bill.createIndexes())
   await BillCounter.createIndexes()

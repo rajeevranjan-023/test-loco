@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import RevokedToken from '../models/RevokedToken.js'
 import { findAccountByUser } from '../utils/accounts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'

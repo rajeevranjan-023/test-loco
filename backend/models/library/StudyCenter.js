@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { billingConfigField } from '../billingConfigSchema.js'
+import { billingConfigField } from '../common/billingConfigSchema.js'
 
 // A Study Center / Library account. Same role as Shop / ServiceProvider: one account document per owner, keyed by
 // userId, and every shared engine (billing, customers, udhar ledger, bill ids) is scoped by this document's _id.

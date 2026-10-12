@@ -2,8 +2,8 @@
 // Controllers (studyController.js) and the billing hook (businessHooks.js) both go through here, so the rules
 // (slot conflicts · expiry never frees a seat · history is never deleted) live in exactly one place.
 import mongoose from 'mongoose'
-import Customer from '../models/Customer.js'
-import Udhar from '../models/Udhar.js'
+import Customer from '../models/common/Customer.js'
+import Udhar from '../models/common/Udhar.js'
 import Seat from '../models/library/Seat.js'
 import StudyMember from '../models/library/StudyMember.js'
 import Membership from '../models/library/Membership.js'

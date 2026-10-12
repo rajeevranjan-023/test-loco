@@ -1,4 +1,4 @@
-import User from '../models/User.js'
+import User from '../models/common/User.js'
 import Shop from '../models/shop/Shop.js'
 import ServiceProvider from '../models/services/ServiceProvider.js'
 import StudyCenter from '../models/library/StudyCenter.js'

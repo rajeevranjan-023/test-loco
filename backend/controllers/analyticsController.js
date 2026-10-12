@@ -1,5 +1,5 @@
-import Product from '../models/Product.js'
-import Sale from '../models/Sale.js'
+import Product from '../models/common/Product.js'
+import Sale from '../models/common/Sale.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 // _________________________________________________________________________

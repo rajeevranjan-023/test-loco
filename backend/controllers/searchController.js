@@ -1,5 +1,5 @@
 import { escapeRegex } from '../utils/escapeRegex.js'
-import Product from '../models/Product.js'
+import Product from '../models/common/Product.js'
 import ServiceProvider from '../models/services/ServiceProvider.js'
 import Shop from '../models/shop/Shop.js'
 import { asyncHandler } from '../utils/asyncHandler.js'

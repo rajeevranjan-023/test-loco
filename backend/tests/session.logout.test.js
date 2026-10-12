@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 process.env.JWT_SECRET = 'test-secret'
 const { default: jwt } = await import('jsonwebtoken')
-const { default: User } = await import('../models/User.js')
+const { default: User } = await import('../models/common/User.js')
 const { default: RevokedToken } = await import('../models/RevokedToken.js')
 const { protect, optionalAuth, tokenHash } = await import('../middleware/auth.js')
 const { logout } = await import('../controllers/authController.js')

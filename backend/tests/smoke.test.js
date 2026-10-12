@@ -32,7 +32,7 @@ if (process.env.TEST_MONGODB_URI) {
 const { default: mongoose } = await import('mongoose')
 const { default: app } = await import('../server.js')
 const { connectDB } = await import('../config/db.js')
-const { default: User } = await import('../models/User.js')
+const { default: User } = await import('../models/common/User.js')
 
 await connectDB()
 

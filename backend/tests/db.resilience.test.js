@@ -23,7 +23,7 @@ const { default: app } = await import('../server.js')
 const { connectDB, isDbReady, dbConnectOptions } = await import('../config/db.js')
 const { requestId, notFound, errorHandler } = await import('../middleware/errorHandler.js')
 const { asyncHandler } = await import('../utils/asyncHandler.js')
-const { default: User } = await import('../models/User.js')
+const { default: User } = await import('../models/common/User.js')
 const { startFakeMongo } = await import('./_support/fakeMongo.js')
 
 const inProduction = async (fn) => { const o = process.env.NODE_ENV, l = process.env.LOG_IN_TEST; process.env.NODE_ENV = 'production'; delete process.env.LOG_IN_TEST; try { return await fn() } finally { process.env.NODE_ENV = o; process.env.LOG_IN_TEST = l } }
