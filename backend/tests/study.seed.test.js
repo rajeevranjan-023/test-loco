@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import mongoose from 'mongoose'
 import { generateStudy } from '../seed/studyData.js'
-import { seatState, dueAge, DEFAULT_WINDOW, memberStatus } from '../utils/studyLogic.js'
+import { seatState, dueAge, DEFAULT_WINDOW, memberStatus } from '../utils/library/studyLogic.js'
 
 const NOW = Date.now(), centerId = new mongoose.Types.ObjectId()
 const d = generateStudy({ centerId, now: NOW })

@@ -1,6 +1,6 @@
 // Pure-logic tests for the Study Center (no database needed):  node tests/study.logic.test.js
 import assert from 'node:assert/strict'
-import { buildSeatNames, normSlot, overlaps, findConflict, seatState, coveredMinutes, dueAge, dueText, addMonths, renewalStart, memberStatus, isExpired, applyDiscount, seatSort, slotLabel } from '../utils/studyLogic.js'
+import { buildSeatNames, normSlot, overlaps, findConflict, seatState, coveredMinutes, dueAge, dueText, addMonths, renewalStart, memberStatus, isExpired, applyDiscount, seatSort, slotLabel } from '../utils/library/studyLogic.js'
 
 let n = 0
 const t = (name, fn) => { fn(); n++; console.log('✅', name) }

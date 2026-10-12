@@ -3,12 +3,12 @@
 //
 // The analytics *configuration* (which KPI cards and charts exist, their labels and formats) is returned together with the data,
 // so the frontend renders any business's analytics from config alone (see frontend ConfigAnalytics).
-import Bill from '../models/common/Bill.js'
-import Udhar from '../models/common/Udhar.js'
-import UdharHistory from '../models/common/UdharHistory.js'
-import StudyMember from '../models/library/StudyMember.js'
-import Membership from '../models/library/Membership.js'
-import SeatAssignment from '../models/library/SeatAssignment.js'
+import Bill from '../../models/common/Bill.js'
+import Udhar from '../../models/common/Udhar.js'
+import UdharHistory from '../../models/common/UdharHistory.js'
+import StudyMember from '../../models/library/StudyMember.js'
+import Membership from '../../models/library/Membership.js'
+import SeatAssignment from '../../models/library/SeatAssignment.js'
 import { seatBoard, memberRows, windowOf } from './studyService.js'
 import { toMin, DAY, dueAge } from './studyLogic.js'
 

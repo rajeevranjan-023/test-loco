@@ -4,7 +4,7 @@ import Product from '../models/common/Product.js'
 import Udhar from '../models/common/Udhar.js'
 import UdharHistory from '../models/common/UdharHistory.js'
 import Message from '../models/shop/Message.js'
-import { buildInsights } from '../utils/insights.js'
+import { buildInsights } from '../utils/shop/insights.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 // GET /api/seller/insights?days=30&channel=both|online|offline

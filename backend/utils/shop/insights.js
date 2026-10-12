@@ -1,4 +1,4 @@
-import { displayBillId } from './billId.js'
+import { displayBillId } from '../billId.js'
 // Pure analytics engine: raw shop data in → every number/series the Analytics page renders out.
 // (No DB access here, so it can be unit-tested with generated data.)
 const DAY = 864e5

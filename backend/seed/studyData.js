@@ -4,7 +4,7 @@
 import mongoose from 'mongoose'
 import { computeBill, deriveTransactionType } from '../utils/billing.js'
 import { dateParts } from '../utils/billId.js'
-import { normSlot, findConflict, addMonths, DEFAULT_WINDOW, slotLabel, seatSort } from '../utils/studyLogic.js'
+import { normSlot, findConflict, addMonths, DEFAULT_WINDOW, slotLabel, seatSort } from '../utils/library/studyLogic.js'
 import { schemaFor } from '../utils/businessSchema.js'
 
 const DAY = 864e5

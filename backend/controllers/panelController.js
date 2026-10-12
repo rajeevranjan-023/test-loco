@@ -9,7 +9,7 @@ import { payLabel } from '../utils/payLabel.js'
 import { displayBillId } from '../utils/billId.js'
 import { publicBusiness } from '../utils/businessSchema.js'
 import { accountName, accountCode } from '../utils/accounts.js'
-import { studyNotifications } from '../utils/studyReports.js'
+import { studyNotifications } from '../utils/library/studyReports.js'
 
 const STATUSES = ['New', 'Preparing', 'Out for Delivery', 'Delivered']
 const sid = (req) => req.sellerAccount._id

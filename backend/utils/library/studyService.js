@@ -2,13 +2,13 @@
 // Controllers (studyController.js) and the billing hook (businessHooks.js) both go through here, so the rules
 // (slot conflicts · expiry never frees a seat · history is never deleted) live in exactly one place.
 import mongoose from 'mongoose'
-import Customer from '../models/common/Customer.js'
-import Udhar from '../models/common/Udhar.js'
-import Seat from '../models/library/Seat.js'
-import StudyMember from '../models/library/StudyMember.js'
-import Membership from '../models/library/Membership.js'
-import SeatAssignment from '../models/library/SeatAssignment.js'
-import StudyCenter from '../models/library/StudyCenter.js'
+import Customer from '../../models/common/Customer.js'
+import Udhar from '../../models/common/Udhar.js'
+import Seat from '../../models/library/Seat.js'
+import StudyMember from '../../models/library/StudyMember.js'
+import Membership from '../../models/library/Membership.js'
+import SeatAssignment from '../../models/library/SeatAssignment.js'
+import StudyCenter from '../../models/library/StudyCenter.js'
 import { normSlot, findConflict, seatState, seatSort, dueAge, memberStatus, DEFAULT_WINDOW, slotLabel, addMonths, renewalStart, STATE_COLOR } from './studyLogic.js'
 
 const oid = (x) => (x && x._id ? x._id : x)

@@ -14,8 +14,8 @@ import Enrollment from '../models/library/Enrollment.js'
 import Membership from '../models/library/Membership.js'
 import SeatAssignment from '../models/library/SeatAssignment.js'
 import StudyMember from '../models/library/StudyMember.js'
-import { ensureMember, createMembership, assertSlotFree, windowOf } from './studyService.js'
-import { normSlot } from './studyLogic.js'
+import { ensureMember, createMembership, assertSlotFree, windowOf } from './library/studyService.js'
+import { normSlot } from './library/studyLogic.js'
 
 const isId = (x) => mongoose.isValidObjectId(x)
 const fail = (status, message) => Object.assign(new Error(message), { status, expose: true })
