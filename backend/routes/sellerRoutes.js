@@ -7,7 +7,7 @@ import {
   startSellerAccount, 
   getMySellerAccount, 
   updateSellerAccount,
-  checkUsernameAvailability } from '../controllers/sellerController.js'
+  checkUsernameAvailability } from '../controllers/common/sellerController.js'
 router.post('/start', protect, startSellerAccount)
 router.get('/me', protect, getMySellerAccount)
 router.patch('/account', protect, updateSellerAccount)
@@ -29,14 +29,14 @@ import {
   listMyProducts,
   createProduct,
   updateProduct,
-  deleteProduct,} from '../controllers/productController.js'
+  deleteProduct,} from '../controllers/common/productController.js'
 router.get('/products', listMyProducts)
 router.post('/products', createProduct)
 router.put('/products/:productId', updateProduct)
 router.delete('/products/:productId', deleteProduct)
 
 // Inventory: search, batch-wise restock, cost history
-import { searchProducts, addStock, getProductHistory, editBatch, addInventoryProduct } from '../controllers/inventoryController.js'
+import { searchProducts, addStock, getProductHistory, editBatch, addInventoryProduct } from '../controllers/common/inventoryController.js'
 router.get('/inventory/search', searchProducts)
 router.post('/inventory/add', addInventoryProduct)
 router.post('/products/:productId/stock', addStock)
@@ -44,7 +44,7 @@ router.get('/products/:productId/history', getProductHistory)
 router.patch('/products/:productId/batches/:batchId', editBatch)
 
 // _________________________________________________________________________
-import { recordSale, listSales, updateSale, listBills } from '../controllers/salesController.js'
+import { recordSale, listSales, updateSale, listBills } from '../controllers/common/salesController.js'
 router.post('/sales', recordSale)
 router.get('/sales', listSales)
 router.put('/sales/:saleId', updateSale)
@@ -64,7 +64,7 @@ import { getInsights } from '../controllers/shop/insightsController.js'
 router.get('/insights', getInsights)
 
 // Keyboard-first billing screen
-import { searchCustomers, addCustomer, selectGlobalCustomer, billingProducts, recentBills, billDetail, listDrafts, saveDraft, getDraft, deleteDraft, getBillingConfig, updateBillingConfig, listServices, saveService, deleteService, billingSummary, billDocument } from '../controllers/billingController.js'
+import { searchCustomers, addCustomer, selectGlobalCustomer, billingProducts, recentBills, billDetail, listDrafts, saveDraft, getDraft, deleteDraft, getBillingConfig, updateBillingConfig, listServices, saveService, deleteService, billingSummary, billDocument } from '../controllers/common/billingController.js'
 router.get('/billing/customers', searchCustomers)
 router.post('/billing/customers', addCustomer)
 router.post('/billing/customers/select', selectGlobalCustomer)
@@ -84,7 +84,7 @@ router.get('/billing/recent', recentBills)
 router.get('/billing/bills/:billId', billDetail)
 
 // Udhar notebook (ledger): overview, manual add/payment, per-customer history, entry detail, pinning
-import { overview as udharOverview, addEntry as udharAdd, customerHistory, entryDetail, setPinned } from '../controllers/udharController.js'
+import { overview as udharOverview, addEntry as udharAdd, customerHistory, entryDetail, setPinned } from '../controllers/common/udharController.js'
 router.get('/udhar/overview', udharOverview)
 router.post('/udhar/entries', udharAdd)
 router.get('/udhar/entries/:entryId', entryDetail)
@@ -92,9 +92,9 @@ router.get('/udhar/customers/:id/history', customerHistory)
 router.patch('/udhar/customers/:id/pin', setPinned)
 
 // Seller panel pages: shell summary, orders, customers, offers, messages
-import { getSummary, listOffers, createOffer, updateOffer, deleteOffer, listConversations, getThread, sendMessage } from '../controllers/panelController.js'
+import { getSummary, listOffers, createOffer, updateOffer, deleteOffer, listConversations, getThread, sendMessage } from '../controllers/common/panelController.js'
 router.get('/summary', getSummary)
-import { listOrders, getOrder, updateOrderStatus, editOrder, deleteOrder, addOrderPayment } from '../controllers/ordersController.js'
+import { listOrders, getOrder, updateOrderStatus, editOrder, deleteOrder, addOrderPayment } from '../controllers/common/ordersController.js'
 router.get('/orders', listOrders)
 router.get('/orders/:billId', getOrder)
 router.patch('/orders/:billId/status', updateOrderStatus)

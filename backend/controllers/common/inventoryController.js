@@ -1,7 +1,7 @@
-import Product from '../models/common/Product.js'
-import Sale from '../models/common/Sale.js'
-import { asyncHandler } from '../utils/asyncHandler.js'
-import { addBatch, applyBatchEdit, ensureBatches, withProduct, weightedCost, r3, nextProductCode, StockError } from '../utils/common/stock.js'
+import Product from '../../models/common/Product.js'
+import Sale from '../../models/common/Sale.js'
+import { asyncHandler } from '../../utils/asyncHandler.js'
+import { addBatch, applyBatchEdit, ensureBatches, withProduct, weightedCost, r3, nextProductCode, StockError } from '../../utils/common/stock.js'
 
 const sid = (req) => req.sellerAccount._id
 const shopOnly = (req, res) => {

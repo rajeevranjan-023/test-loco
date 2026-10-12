@@ -1,7 +1,7 @@
 import express from 'express'
 import { protect, requireSeller } from '../middleware/auth.js'
-import { searchCustomers } from '../controllers/billingController.js'
-import { listCustomers, getCustomer, getCustomerHistory, updateCustomer, customerActivity, getTransactions, addAdjustment, getGlobalHistory } from '../controllers/customerController.js'
+import { searchCustomers } from '../controllers/common/billingController.js'
+import { listCustomers, getCustomer, getCustomerHistory, updateCustomer, customerActivity, getTransactions, addAdjustment, getGlobalHistory } from '../controllers/common/customerController.js'
 
 const router = express.Router()
 router.use(protect, requireSeller)

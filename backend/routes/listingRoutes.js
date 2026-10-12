@@ -1,6 +1,6 @@
 import express from 'express'
 import { listShops, listServices } from '../controllers/listingController.js'
-import { listAllProducts } from '../controllers/productController.js'
+import { listAllProducts } from '../controllers/common/productController.js'
 
 const router = express.Router()
 
