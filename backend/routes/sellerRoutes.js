@@ -21,7 +21,7 @@ router.use(protect, requireSeller)
 // Owner check for /:username/* dashboard URLs — 200 for the owner, 403 for everyone else.
 router.get('/owner/:username', requireOwner(), (req, res) => res.json({ isOwner: true }))
 
-import studyRoutes from './studyRoutes.js'
+import studyRoutes from './library/studyRoutes.js'
 router.use('/study', studyRoutes) // study-centre module (guarded by the seatManagement capability)
 
 // _________________________________________________________________________

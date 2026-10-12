@@ -1,6 +1,6 @@
 import express from 'express'
-import { protect, requireSeller } from '../middleware/auth.js'
-import { getOrder, addOrderPayment, convertPaid, updateOrderStatus } from '../controllers/common/ordersController.js'
+import { protect, requireSeller } from '../../middleware/auth.js'
+import { getOrder, addOrderPayment, convertPaid, updateOrderStatus } from '../../controllers/common/ordersController.js'
 
 const router = express.Router()
 router.use(protect, requireSeller)

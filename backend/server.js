@@ -72,10 +72,10 @@ app.use('/api/auth', authRoutes)
 import sellerRoutes from './routes/sellerRoutes.js'
 app.use('/api/seller', sellerRoutes)
 
-import billRoutes from './routes/billRoutes.js'
+import billRoutes from './routes/common/billRoutes.js'
 app.use('/api/bills', billRoutes)
 
-import customerRoutes from './routes/customerRoutes.js'
+import customerRoutes from './routes/common/customerRoutes.js'
 app.use('/api/customers', customerRoutes)
 app.use('/api/seller/customers', customerRoutes) 
 
@@ -95,7 +95,7 @@ app.use('/api/follow', followRoutes)
 import mediaRoutes from './routes/mediaRoutes.js'
 app.use('/api/media', mediaRoutes)
 
-import studyPublicRoutes from './routes/studyPublicRoutes.js'
+import studyPublicRoutes from './routes/library/studyPublicRoutes.js'
 app.use('/api/study', studyPublicRoutes)
 
 
