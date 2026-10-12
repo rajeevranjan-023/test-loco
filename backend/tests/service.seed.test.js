@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import mongoose from 'mongoose'
 import { generateService } from '../seed/serviceProviderData.js'
-import { computeBill, r2 } from '../utils/billing.js'
+import { computeBill, r2 } from '../utils/common/billing.js'
 import { guardSelfTest } from './_seedGuardCases.js'
 import Bill from '../models/common/Bill.js'
 import Product from '../models/common/Product.js'

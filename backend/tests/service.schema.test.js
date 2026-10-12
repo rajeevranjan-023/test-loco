@@ -1,6 +1,6 @@
 // Service Provider business schema: analytics module, no shop-only modules (no database needed).
 import assert from 'node:assert/strict'
-import { schemaFor, publicBusiness, navOf } from '../utils/businessSchema.js'
+import { schemaFor, publicBusiness, navOf } from '../utils/common/businessSchema.js'
 let n = 0; const t = (m, f) => { f(); n++; console.log('✅', m) }
 
 const svc = publicBusiness('service', {}), shop = publicBusiness('shop', {}), study = publicBusiness('study_center', {})

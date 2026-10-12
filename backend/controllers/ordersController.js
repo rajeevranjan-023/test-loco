@@ -5,11 +5,11 @@ import Product from '../models/common/Product.js'
 import Customer from '../models/common/Customer.js'
 import Udhar from '../models/common/Udhar.js'
 import UdharHistory from '../models/common/UdharHistory.js'
-import { applyLedger, rebuildLedger, r2, EPS } from '../utils/ledger.js'
+import { applyLedger, rebuildLedger, r2, EPS } from '../utils/common/ledger.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { paymentsOf } from '../utils/billPayments.js'
-import { displayBillId } from '../utils/billId.js'
-import { restoreToBatches, breakdownOfSale, withProduct, r3 } from '../utils/stock.js'
+import { paymentsOf } from '../utils/common/billPayments.js'
+import { displayBillId } from '../utils/common/billId.js'
+import { restoreToBatches, breakdownOfSale, withProduct, r3 } from '../utils/common/stock.js'
 
 const STATUSES = ['New', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled']
 // List order: Draft (always first, newest first) → New → Preparing → Out for Delivery → Cancelled → Delivered

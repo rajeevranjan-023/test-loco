@@ -1,4 +1,4 @@
-import GlobalUser from '../models/common/GlobalUser.js'
+import GlobalUser from '../../models/common/GlobalUser.js'
 
 export const PHONE_RE = /^\d{10}$/
 export const mostUsedName = (g) => [...(g?.names || [])].sort((a, b) => b.count - a.count)[0]?.name || ''

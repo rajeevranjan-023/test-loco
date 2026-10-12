@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
-import Product from '../models/common/Product.js'
-import Counter from '../models/Counter.js'
+import Product from '../../models/common/Product.js'
+import Counter from '../../models/Counter.js'
 
 // =====================================================================================================
 //  Batch / FIFO stock engine

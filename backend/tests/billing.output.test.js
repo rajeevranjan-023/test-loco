@@ -1,14 +1,14 @@
 // Pipeline + customer-facing outputs (80mm · A4 · WhatsApp · Telegram · SMS) — pure logic, no database.  node tests/billing.output.test.js
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { computeBill, buildDocument, cleanDiscount, cleanChargeLine, cleanLineExtras, deriveTransactionType } from '../utils/billing.js'
+import { computeBill, buildDocument, cleanDiscount, cleanChargeLine, cleanLineExtras, deriveTransactionType } from '../utils/common/billing.js'
 import { thermalHtml, a4Html, whatsappText, telegramText, smsText, shareLinks } from '../../frontend/src/features/analytics/billOutput.js'
 const L = (type, rate, qty = 1, x = {}) => ({ type, rate, qty, ...x })
 const near = (a, b, m) => assert.ok(Math.abs(a - b) < 0.006, `${m}: ${a} !== ${b}`)
 const ok = (m) => console.log('✅', m)
 
 // the frontend gets a byte-identical copy of the engine — one calculation source
-assert.equal(fs.readFileSync(new URL('../utils/billing.js', import.meta.url), 'utf8'), fs.readFileSync(new URL('../../frontend/src/features/analytics/billCore.js', import.meta.url), 'utf8'))
+assert.equal(fs.readFileSync(new URL('../utils/common/billing.js', import.meta.url), 'utf8'), fs.readFileSync(new URL('../../frontend/src/features/analytics/billCore.js', import.meta.url), 'utf8'))
 ok('frontend billCore.js is byte-identical to the server engine (single calculation source)')
 
 // ── discounts: the brief's examples

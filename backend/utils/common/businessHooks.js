@@ -9,13 +9,13 @@
 //
 // Shop and Service have no hooks: their bills behave exactly as before.
 import mongoose from 'mongoose'
-import Course from '../models/library/Course.js'
-import Enrollment from '../models/library/Enrollment.js'
-import Membership from '../models/library/Membership.js'
-import SeatAssignment from '../models/library/SeatAssignment.js'
-import StudyMember from '../models/library/StudyMember.js'
-import { ensureMember, createMembership, assertSlotFree, windowOf } from './library/studyService.js'
-import { normSlot } from './library/studyLogic.js'
+import Course from '../../models/library/Course.js'
+import Enrollment from '../../models/library/Enrollment.js'
+import Membership from '../../models/library/Membership.js'
+import SeatAssignment from '../../models/library/SeatAssignment.js'
+import StudyMember from '../../models/library/StudyMember.js'
+import { ensureMember, createMembership, assertSlotFree, windowOf } from '../library/studyService.js'
+import { normSlot } from '../library/studyLogic.js'
 
 const isId = (x) => mongoose.isValidObjectId(x)
 const fail = (status, message) => Object.assign(new Error(message), { status, expose: true })

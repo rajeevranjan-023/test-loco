@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import User from '../models/common/User.js'
 import RevokedToken from '../models/RevokedToken.js'
-import { findAccountByUser } from '../utils/accounts.js'
+import { findAccountByUser } from '../utils/common/accounts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { normalizeUsername } from '../utils/username.js'
 
@@ -118,7 +118,7 @@ export const requireOwner = (param = 'username') => (req, res, next) => {
 
 // Route guard for a business module (e.g. the study-centre seat/member APIs): allowed only when this account's business
 // schema has that capability switched on. Keyed on capabilities from the schema — never on a name or id.
-import { capabilitiesOf } from '../utils/businessSchema.js'
+import { capabilitiesOf } from '../utils/common/businessSchema.js'
 export const requireCapability = (cap) => (req, res, next) => {
   if (!capabilitiesOf(req.sellerType, req.sellerAccount)[cap]) return res.status(403).json({ message: 'This feature is not available for your business type.' })
   next()

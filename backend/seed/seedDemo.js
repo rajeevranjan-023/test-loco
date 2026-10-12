@@ -16,7 +16,7 @@ import Customer from '../models/common/Customer.js'
 import Udhar from '../models/common/Udhar.js'
 import UdharHistory from '../models/common/UdharHistory.js'
 import { generateDemo } from './demoData.js'
-import { migrateLedger } from '../utils/ledger.js'
+import { migrateLedger } from '../utils/common/ledger.js'
 import { assertDevSeedAllowed } from './guard.js'
 
 export const ACCOUNTS = [

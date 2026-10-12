@@ -1,7 +1,7 @@
 import Product from '../models/common/Product.js'
 import Sale from '../models/common/Sale.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { addBatch, ensureBatches, writeOffFIFO, nextProductCode, withProduct, r3, StockError } from '../utils/stock.js'
+import { addBatch, ensureBatches, writeOffFIFO, nextProductCode, withProduct, r3, StockError } from '../utils/common/stock.js'
 
 // _________________________________________________________________________
 // =========================================================================

@@ -22,7 +22,7 @@ const { rateLimit } = await import('../middleware/rateLimit.js')
 const { upload } = await import('../middleware/upload.js')
 const { default: User } = await import('../models/common/User.js')
 const { default: RevokedToken } = await import('../models/RevokedToken.js')
-const { applyLedger } = await import('../utils/ledger.js')
+const { applyLedger } = await import('../utils/common/ledger.js')
 const { logger, redactText, redactUrl, redactObject } = await import('../utils/logger.js')
 const { installProcessHandlers } = await import('../utils/processHandlers.js')
 

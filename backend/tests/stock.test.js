@@ -1,6 +1,6 @@
 // FIFO batch engine tests — pure logic, no database.
 import assert from 'node:assert/strict'
-import { addBatch, consumeFIFO, restoreToBatches, writeOffFIFO, trimBreakdown, weightedCost, totalCost, applyBatchEdit, ensureBatches, syncStock, codeFor, breakdownOfSale, StockError } from '../utils/stock.js'
+import { addBatch, consumeFIFO, restoreToBatches, writeOffFIFO, trimBreakdown, weightedCost, totalCost, applyBatchEdit, ensureBatches, syncStock, codeFor, breakdownOfSale, StockError } from '../utils/common/stock.js'
 
 const mk = (over = {}) => ({ name: 'Sugar', listed: true, stock: 0, costPrice: 70, createdAt: new Date('2026-01-01'), batches: [], ...over })
 const day = (n) => new Date(2026, 0, n)

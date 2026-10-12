@@ -6,9 +6,9 @@
 //   • Everything is linked through real ids: Bill.items[].refId → ServiceItem/Product, Bill.customerId → Customer,
 //     UdharHistory/Udhar → Customer, Sale → Product + billId.
 import mongoose from 'mongoose'
-import { computeBill, costBreakdown, deriveTransactionType, r2 } from '../utils/billing.js'
-import { addBatch, consumeFIFO, codeFor, weightedCost, r3 } from '../utils/stock.js'
-import { dateParts, slotFor, formatBillId, formatFullId } from '../utils/billId.js'
+import { computeBill, costBreakdown, deriveTransactionType, r2 } from '../utils/common/billing.js'
+import { addBatch, consumeFIFO, codeFor, weightedCost, r3 } from '../utils/common/stock.js'
+import { dateParts, slotFor, formatBillId, formatFullId } from '../utils/common/billId.js'
 
 const DAY = 864e5
 const oid = () => new mongoose.Types.ObjectId()

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { dailySeries, topItems, istDay } from '../utils/billingSeries.js'
+import { dailySeries, topItems, istDay } from '../utils/common/billingSeries.js'
 let n = 0; const t = (m, f) => { f(); n++; console.log('✅', m) }
 const bills = [
   { createdAt: '2026-03-01T19:00:00Z', revenue: { product: 500, service: 300, labour: 200 }, paidAmount: 700, unpaidAmount: 300, totalAmount: 1000, items: [{ type: 'service', name: 'AC Service', qty: 1, total: 300 }, { type: 'product', name: 'Gas ', qty: 1, total: 500 }, { type: 'material', name: 'Tape', qty: 2, total: 0 }] },

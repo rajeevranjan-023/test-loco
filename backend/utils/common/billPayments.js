@@ -1,4 +1,4 @@
-import UdharHistory from '../models/common/UdharHistory.js'
+import UdharHistory from '../../models/common/UdharHistory.js'
 import { r2 as round2 } from './billing.js'
 
 // What was paid, per method, in order: what the customer paid at billing (split or single), advance used, then every later instalment from the ledger.

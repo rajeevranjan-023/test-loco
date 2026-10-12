@@ -2,10 +2,10 @@
 // seed/seedStudyCenter.js writes what this returns, through Mongoose, into the real database.
 // Deterministic: same seed → same data. It asserts its own invariants (no overlapping seat slots, due ages as designed …).
 import mongoose from 'mongoose'
-import { computeBill, deriveTransactionType } from '../utils/billing.js'
-import { dateParts } from '../utils/billId.js'
+import { computeBill, deriveTransactionType } from '../utils/common/billing.js'
+import { dateParts } from '../utils/common/billId.js'
 import { normSlot, findConflict, addMonths, DEFAULT_WINDOW, slotLabel, seatSort } from '../utils/library/studyLogic.js'
-import { schemaFor } from '../utils/businessSchema.js'
+import { schemaFor } from '../utils/common/businessSchema.js'
 
 const DAY = 864e5
 const oid = () => new mongoose.Types.ObjectId()

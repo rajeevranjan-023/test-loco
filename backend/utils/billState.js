@@ -1,4 +1,4 @@
-import { r2, EPS } from './ledger.js'
+import { r2, EPS } from './common/ledger.js'
 
 // Paid / Udhar / Advance for a bill, given how much of its udhar is still outstanding.
 export const billStateOf = (bill, remaining) => (bill.advanceAdded > 0 ? 'Advance' : remaining > EPS ? 'Udhar' : 'Paid')

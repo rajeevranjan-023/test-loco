@@ -1,10 +1,10 @@
 // Universal Billing Engine — pure logic, no database.  node tests/billing.test.js
 import assert from 'node:assert/strict'
-import { deriveTransactionType as tt, computeBill, costBreakdown, resolveContext, cleanChargeLine } from '../utils/billing.js'
+import { deriveTransactionType as tt, computeBill, costBreakdown, resolveContext, cleanChargeLine } from '../utils/common/billing.js'
 const subtotalOf = (l) => computeBill(l).subtotal
 const applyDiscount = (sub, d) => { const c = computeBill([{ type: 'product', rate: sub, qty: 1 }], { discount: d }); return { discount: c.discount, total: c.total } }
 const revenueBreakdown = (l, d = 0) => computeBill(l, { discount: d }).revenue
-import { billingCapabilities, sanitizeCapabilities, enabledTypes } from '../utils/billingConfig.js'
+import { billingCapabilities, sanitizeCapabilities, enabledTypes } from '../utils/common/billingConfig.js'
 const L = (type, rate, qty = 1, extra = {}) => ({ type, rate, qty, ...extra })
 
 // transaction type is DERIVED from the line items

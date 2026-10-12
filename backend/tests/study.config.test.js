@@ -1,9 +1,9 @@
 // Business-schema + billing-configuration tests (no database): one engine, schema-driven behaviour, shops untouched.
 import assert from 'node:assert/strict'
-import { schemaFor, publicBusiness, navOf, capabilitiesOf, hasCapability, BUSINESS_TYPES } from '../utils/businessSchema.js'
-import { billingCapabilities, enabledTypes, labelFor, addLabelFor, TYPE_CAP } from '../utils/billingConfig.js'
-import { computeBill, cleanChargeLine, deriveTransactionType, buildDocument, LINE_TYPES } from '../utils/billing.js'
-import { hooksFor } from '../utils/businessHooks.js'
+import { schemaFor, publicBusiness, navOf, capabilitiesOf, hasCapability, BUSINESS_TYPES } from '../utils/common/businessSchema.js'
+import { billingCapabilities, enabledTypes, labelFor, addLabelFor, TYPE_CAP } from '../utils/common/billingConfig.js'
+import { computeBill, cleanChargeLine, deriveTransactionType, buildDocument, LINE_TYPES } from '../utils/common/billing.js'
+import { hooksFor } from '../utils/common/businessHooks.js'
 let n = 0; const t = (name, fn) => { fn(); n++; console.log('✅', name) }
 const center = { config: { plans: [{ key: '1m', name: '1 Month', months: 1, price: 1000 }], features: {}, operatingHours: { open: '06:00', close: '22:00' } }, billing: undefined }
 
