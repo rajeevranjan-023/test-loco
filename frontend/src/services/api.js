@@ -1,9 +1,14 @@
 import axios from 'axios'
 import { getToken, getEpoch, trackRequest, onIdentityReset, notifyUnauthorized } from './session.js'
+import { normalizeApiError } from './apiError.js'
+import { isOutage, reportReachable, reportUnreachable } from './connectivity.js'
 
-const BASE_URL = 'http://localhost:5000' 
+// Set VITE_API_URL at build time for deployed environments; falls back to the local dev API.
+const BASE_URL = (import.meta.env?.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '')
 
-const client = axios.create({ baseURL: BASE_URL })
+// A request that gets no answer must end: without a timeout a dead connection keeps the spinner forever. Uploads pass their own, longer one.
+const TIMEOUT_MS = Number(import.meta.env?.VITE_API_TIMEOUT_MS) || 30000
+const client = axios.create({ baseURL: BASE_URL, timeout: TIMEOUT_MS })
 
 // Admin "view as": while an admin browses /:username/*, every authenticated request carries that username so the
 // backend serves that shop's data. The backend ignores this header for anyone who is not an admin.
@@ -31,6 +36,7 @@ client.interceptors.response.use(
     res.config.__untrack?.()
     // A late answer to a request sent under a previous account must never reach the screen of the current one.
     if (res.config.requiresAuth && res.config.__epoch !== getEpoch()) return Promise.reject(canceled())
+    reportReachable() // the server answered: clear any "can't reach the server" notice
     return res.data
   },
   (err) => {
@@ -40,15 +46,12 @@ client.interceptors.response.use(
     if (err.response?.status === 401 && err.config?.requiresAuth && err.config.__token && err.config.__token === getToken()) {
       notifyUnauthorized(err.config.__token) // the session this tab uses is no longer valid (logged out elsewhere / expired) → AuthContext ends it
     }
-    if (err.response) {
-      const e = new Error(err.response.data?.message || `Request failed with status ${err.response.status}`)
-      e.status = err.response.status       // lets callers react to 401/409/429 …
-      e.data = err.response.data           // and read field-level `errors`, `code`, `attemptsLeft` …
-      return Promise.reject(e)
-    }
-    return Promise.reject(
-      new Error(`Could not reach the API at ${BASE_URL}. Is the backend running? (${err.message})`)
-    )
+    // Everything else becomes an ApiError with a SAFE message (see services/apiError.js): never the Axios text, the API address,
+    // an HTML error page or backend internals. `.status` and `.data` stay available exactly as before for callers that branch on them.
+    const apiErr = normalizeApiError(err)
+    if (isOutage(apiErr)) reportUnreachable(apiErr.kind)
+    else if (err.response) reportReachable() // a 4xx/500 still proves the server is reachable
+    return Promise.reject(apiErr)
   }
 )
 

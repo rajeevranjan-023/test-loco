@@ -171,7 +171,10 @@ export const releaseMany = asyncHandler(async (req, res) => {
   const ids = Array.isArray(req.body.ids) ? req.body.ids.slice(0, 200) : []
   if (!ids.length) return bad(res, 'Select at least one seat.')
   let n = 0
-  for (const id of ids) { try { await releaseAssignment(center(req), id, { by: 'owner', note: req.body.note }); n++ } catch { /* already released */ } }
+  for (const id of ids) {
+    try { await releaseAssignment(center(req), id, { by: 'owner', note: req.body.note }); n++ }
+    catch (e) { if (!(e?.expose && e.status >= 400 && e.status < 500)) throw e /* only "already released / not found" is skipped; a database or unexpected failure must not look like "0 released" */ }
+  }
   res.json({ released: n })
 })
 // POST /study/assignments/:id/reassign  { seatId, slot? }  — move a member to another seat; the new spot is checked BEFORE the old one is released

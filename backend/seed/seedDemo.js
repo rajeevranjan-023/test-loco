@@ -17,10 +17,11 @@ import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'
 import { generateDemo } from './demoData.js'
 import { migrateLedger } from '../utils/ledger.js'
+import { assertDevSeedAllowed } from './guard.js'
 
 export const ACCOUNTS = [
-  { email: 'rajeevranjan@gmail.com', password: 'Priya@4369', name: 'Rajeev Ranjan', username: 'rajeev', shopName: 'Grocery Corner', shopCode: '#GCR001', seed: 23 },
-  { email: 'golu@loco.com', password: 'golu12345', name: 'Rajesh Gupta', username: 'golu', shopName: 'Gupta Kirana Store', shopCode: '#GKS001', seed: 11 },
+  { email: 'demo.shop1@example.com', password: 'DemoShop@123', name: 'Rajeev Ranjan', username: 'rajeev', shopName: 'Grocery Corner', shopCode: '#GCR001', seed: 23 },
+  { email: 'demo.shop2@example.com', password: 'DemoShop@456', name: 'Rajesh Gupta', username: 'golu', shopName: 'Gupta Kirana Store', shopCode: '#GKS001', seed: 11 },
 ]
 const DAY = 864e5
 
@@ -36,6 +37,7 @@ async function wipe(email) {
 }
 
 export async function seedAccount(a) {
+  assertDevSeedAllowed('Shop demo seed') // wipe() below deletes any account with this email — never in production
   await wipe(a.email)
   const user = await User.create({ name: a.name, email: a.email, username: a.username, password: a.password, role: 'seller', sellerType: 'shop', phone: '9876543210' }) // hashed by the User pre-save hook
   const shop = await Shop.create({
@@ -78,6 +80,5 @@ export async function seedIfMissing() {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await mongoose.connect(process.env.MONGODB_URI)
   await seedAll()
-  console.log('Logins → rajeevranjan@gmail.com / Priya@4369   |   golu@loco.com / golu12345')
   await mongoose.disconnect()
 }

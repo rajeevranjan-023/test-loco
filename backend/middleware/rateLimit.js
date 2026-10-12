@@ -12,8 +12,9 @@ export function rateLimit({ windowMs, max, key = (req) => req.ip, message = 'Too
     if (!b || b.reset <= now) { b = { count: 0, reset: now + windowMs }; buckets.set(id, b) }
     b.count++
     if (b.count > max) {
-      res.set('Retry-After', String(Math.ceil((b.reset - now) / 1000)))
-      return res.status(429).json({ message })
+      const retryAfter = Math.ceil((b.reset - now) / 1000)
+      res.set('Retry-After', String(retryAfter))
+      return res.status(429).json({ message, code: 'RATE_LIMITED', retryAfter, requestId: req.id })
     }
     next()
   }

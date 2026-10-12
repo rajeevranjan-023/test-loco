@@ -16,8 +16,8 @@ export const statusOf = (bal) => (bal > EPS ? 'pending' : bal < -EPS ? 'advance'
 export async function applyLedger({ shopId, customer, type, amount, source = 'manual', billId = null, items = [], paymentType = 'cash', note = '', date = new Date() }) {
   type = { add: 'udhar', extra: 'credit' }[type] || type
   amount = r2(Number(amount))
-  if (type === 'adjustment' ? !(Math.abs(amount) > 0) : !(amount > 0)) throw Object.assign(new Error('Amount must be greater than 0.'), { status: 400 })
-  if (!['udhar', 'payment', 'credit', 'use_credit', 'adjustment'].includes(type)) throw Object.assign(new Error('Invalid entry type.'), { status: 400 })
+  if (type === 'adjustment' ? !(Math.abs(amount) > 0) : !(amount > 0)) throw Object.assign(new Error('Amount must be greater than 0.'), { status: 400, expose: true })
+  if (!['udhar', 'payment', 'credit', 'use_credit', 'adjustment'].includes(type)) throw Object.assign(new Error('Invalid entry type.'), { status: 400, expose: true })
 
   let u = await Udhar.findOne({ shopId, customerId: customer._id })
   if (!u) u = new Udhar({ shopId, customerId: customer._id, customerName: customer.name, phone: customer.phone || '', totalAmount: 0 })

@@ -16,6 +16,7 @@ import MessagesPage from './analytics/pages/MessagesPage.jsx'
 import ShopProfilePage from './analytics/pages/ShopProfilePage.jsx'
 import SettingsPage from './analytics/pages/SettingsPage.jsx'
 import AnalyticsPage from './analytics/AnalyticsPage.jsx'
+import BillingAnalyticsPage from './analytics/BillingAnalyticsPage.jsx'
 import StudyDashboardPage from './study/StudyDashboardPage.jsx'
 import MembersPage from './study/MembersPage.jsx'
 import MemberDetailPage from './study/MemberDetailPage.jsx'
@@ -27,7 +28,7 @@ import AddMenuPage from './study/AddMenuPage.jsx'
 // THE module registry: module id (named by the business schema) → the screen(s) that render it.
 // Shared engines (billing · dues/udhar ledger · bill detail · settings) appear under several businesses; only the schema differs.
 const MODULES = {
-  orders: { list: OrdersPage }, billing: { list: BillingPage }, dues: { list: UdharPage }, analytics: { list: AnalyticsPage }, inventory: { list: InventoryPage },
+  orders: { list: OrdersPage }, billing: { list: BillingPage }, dues: { list: UdharPage }, analytics: { list: AnalyticsPage }, billingAnalytics: { list: BillingAnalyticsPage }, inventory: { list: InventoryPage },
   people: { list: CustomersPage, detail: CustomerDetailPage }, bill: { detail: BillPage, list: BillPage }, products: { list: ProductsPage }, offers: { list: OffersPage }, messages: { list: MessagesPage },
   shopProfile: { list: ShopProfilePage }, centerProfile: { list: ShopProfilePage }, settings: { list: SettingsPage },
   studyDashboard: { list: StudyDashboardPage }, members: { list: MembersPage, detail: MemberDetailPage }, memberDetail: { list: MemberDetailPage, detail: MemberDetailPage },

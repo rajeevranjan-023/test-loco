@@ -6,6 +6,7 @@ const { default: app } = await import('../server.js')
 const { default: mongoose } = await import('mongoose')
 const { connectDB } = await import('../config/db.js')
 const { default: BillCounter } = await import('../models/BillCounter.js')
+{ const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'inventory.int') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
 let n = 0; BillCounter.findOneAndUpdate = async () => ({ series: 'A', count: 101 + n++ }) // stub
 const server = app.listen(0); const base = `http://localhost:${server.address().port}`

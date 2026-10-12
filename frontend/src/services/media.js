@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { BASE_URL } from './api.js'
 import { getToken } from './session.js'
+import { normalizeApiError } from './apiError.js'
 
 /**
  * Uploads a single image/video File to POST /api/media/upload.
@@ -19,6 +20,7 @@ export async function uploadMedia(file, folder, onProgress) {
         'Content-Type': 'multipart/form-data',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      timeout: 120000, // photos/videos on a slow connection may legitimately take a while, but not forever
       onUploadProgress: (event) => {
         if (!onProgress || !event.total) return
         onProgress(Math.round((event.loaded / event.total) * 100))
@@ -26,6 +28,6 @@ export async function uploadMedia(file, folder, onProgress) {
     })
     return res.data
   } catch (err) {
-    throw new Error(err.response?.data?.message || 'Upload failed. Please try again.')
+    throw normalizeApiError(err, { fallback: 'Upload failed. Please try again.' }) // safe wording; never the raw backend / Cloudinary text
   }
 }

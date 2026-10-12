@@ -15,6 +15,8 @@ import { Module } from './features/modules.jsx'
 import UnifiedProfilePage from './features/profile/UnifiedProfilePage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import SessionBoundary from './components/SessionBoundary.jsx'
+import { RouteErrorBoundary } from './components/ErrorBoundary.jsx'
+import ConnectionBanner from './components/ConnectionBanner.jsx'
 import PersonalActivityPage from './features/activity/PersonalActivityPage.jsx'
 import { UsernameShell, RedirectToProfile } from './components/UsernameRoute.jsx'
 import LegacyOwnerRedirect from './components/LegacyOwnerRedirect.jsx'
@@ -29,7 +31,9 @@ import Settings from './pages/Settings.jsx'
 function App() {
   return (
     <div className="app-wrapper">
+      <ConnectionBanner />
       <SessionBoundary>
+      <RouteErrorBoundary>
       <Routes>
         {/* Authentication & onboarding: full-page experience with its own header (no site Navbar/Footer) */}
         <Route path="/login" element={<AuthPage mode="login" />} />
@@ -93,6 +97,7 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      </RouteErrorBoundary>
       </SessionBoundary>
     </div>
   )

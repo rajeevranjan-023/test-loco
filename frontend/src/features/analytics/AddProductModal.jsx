@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, X, ImagePlus } from 'lucide-react'
 import { call, Modal, Btn } from './kit.jsx'
+import { userMessage } from '../../services/apiError.js'
 
 // kg | liter | unit — shown the same way everywhere
 export const UNITS = ['kg', 'liter', 'unit']
@@ -63,7 +64,7 @@ export default function AddProductModal({ products, onClose, onSaved }) {
 
   const pickImage = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
-    try { set('image')(await shrink(file)) } catch (err) { notify(err.message, 'err') }
+    try { set('image')(await shrink(file)) } catch (err) { notify(userMessage(err, 'We could not read that image. Please try a different one.'), 'err') }
   }
 
   const submit = async (e) => {

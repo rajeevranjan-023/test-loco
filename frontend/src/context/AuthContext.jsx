@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
   }, [revalidate])
 
   useEffect(() => {
-    session.setUnauthorizedHandler((usedToken) => { if (usedToken === session.getToken()) endSession({ clearStorage: true }) })
+    session.setUnauthorizedHandler((usedToken) => { if (usedToken === session.getToken()) { session.flagSessionExpired(); endSession({ clearStorage: true }) } })
     const stored = session.storedToken()
     if (stored !== session.getToken()) session.setToken(stored, { persist: false }) // a (re)mounted app always starts from what the browser holds
     const token = session.getToken()
@@ -70,17 +70,21 @@ export function AuthProvider({ children }) {
       const stored = session.storedToken(), mine = session.getToken()
       if (stored !== mine) stored ? resync(stored) : endSession({ clearStorage: false }) // another tab changed / ended the session
       else if (persisted && mine) revalidate(mine)                                         // restored from the back/forward cache: prove it is still valid
+      else if (mine && !userRef.current) revalidate(mine)                                  // we hold a token but could not reach the server earlier (offline / DB down): try again now that something woke us
     }
     const onStorage = (e) => { if (e.key === 'lf_token' || e.key === null) check(false) }
     const onPageShow = (e) => check(!!e.persisted)
     const onVisible = () => { if (document.visibilityState === 'visible') check(false) }
     window.addEventListener('storage', onStorage)
+    const onOnline = () => check(false) // the browser got its connection back
     window.addEventListener('pageshow', onPageShow)
+    window.addEventListener('online', onOnline)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       session.setUnauthorizedHandler(null)
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('pageshow', onPageShow)
+      window.removeEventListener('online', onOnline)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [revalidate, endSession, resync])

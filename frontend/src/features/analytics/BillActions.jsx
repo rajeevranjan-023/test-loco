@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { Printer, FileText, Share2, MessageCircle, MessageSquare, Send } from 'lucide-react'
 import { thermalHtml, a4Html, shareLinks, printHtml } from './billOutput.js'
+import { userMessage } from '../../services/apiError.js'
 
 // [ 80mm Print ] [ A4 Print ] [ Share ▾ ] — used by the billing preview AND the bill page. `getDoc` returns the customer-safe document.
 export default function BillActions({ getDoc, size = 'md', onError = () => {} }) {
   const [open, setOpen] = useState(false); const [busy, setBusy] = useState(false)
-  const run = async (fn) => { setBusy(true); try { fn(await getDoc()) } catch (e) { onError(e.message || 'Could not prepare the bill') } finally { setBusy(false) } }
+  const run = async (fn) => { setBusy(true); try { fn(await getDoc()) } catch (e) { onError(userMessage(e, 'Could not prepare the bill')) } finally { setBusy(false) } }
   const h = size === 'sm' ? 'h-9 text-[12.5px] px-3' : 'h-10 text-[13px] px-3.5'
   const base = `flex ${h} items-center gap-1.5 rounded-lg border font-medium transition disabled:opacity-60`
   const share = (name) => run((d) => { const l = shareLinks(d, /iPhone|iPad|iPod/i.test(navigator.userAgent)); if (name === 'SMS') window.location.href = l.SMS; else window.open(l[name], '_blank', 'noopener'); setOpen(false) })

@@ -2,6 +2,8 @@ import streamifier from 'streamifier'
 import { getCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js'
 import { assertWithinSizeLimit } from '../middleware/upload.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import { isProduction } from '../seed/guard.js' // same definition of production as everywhere else (NODE_ENV / RENDER / VERCEL)
+import { logger, redactText } from '../utils/logger.js'
 
 export function streamUpload(buffer, options) {
   const cloudinary = getCloudinary()
@@ -52,7 +54,10 @@ function describeCloudinaryError(err) {
 // Pings Cloudinary with your configured credentials and reports exactly
 // what's wrong, instead of you having to infer it from an upload failure.
 export const testCloudinaryConfig = asyncHandler(async (req, res) => {
+  const prod = isProduction()
   if (!isCloudinaryConfigured()) {
+    logger.warn('cloudinary', 'test-config: Cloudinary credentials are not (fully) configured')
+    if (prod) return res.status(503).json({ ok: false, message: 'Media storage is not configured.', code: 'MEDIA_NOT_CONFIGURED' })
     return res.status(503).json({
       ok: false,
       message: 'CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET are not all set in your .env file (or still have their placeholder values).',
@@ -67,11 +72,12 @@ export const testCloudinaryConfig = asyncHandler(async (req, res) => {
   try {
     const cloudinary = getCloudinary()
     const result = await cloudinary.api.ping()
-    res.json({ ok: true, message: 'Cloudinary connection is working.', result })
+    res.json({ ok: true, message: 'Cloudinary connection is working.', ...(prod ? {} : { result }) })
   } catch (err) {
     const { httpCode, message, hint } = describeCloudinaryError(err)
-    console.error('[cloudinary] ping failed:', { httpCode, message, cloud_name: process.env.CLOUDINARY_CLOUD_NAME })
-    res.status(502).json({ ok: false, message, httpCode, hint })
+    logger.error('cloudinary', 'ping failed', { httpCode, message, cloud_name: process.env.CLOUDINARY_CLOUD_NAME })
+    if (prod) return res.status(502).json({ ok: false, message: 'The media storage check failed.', code: 'UPLOAD_FAILED' })
+    res.status(502).json({ ok: false, message: redactText(message), httpCode, hint })
   }
 })
 
@@ -120,26 +126,27 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   } catch (err) {
     const { httpCode, message, hint } = describeCloudinaryError(err)
 
-    // Log the REAL error server-side — this is the piece that was missing
-    // before (the old catch block swallowed `err` entirely and always
-    // returned the same generic 502 message, which is why you couldn't
-    // see what Cloudinary was actually complaining about).
-    console.error('[cloudinary] upload failed:', {
+    // The REAL error stays in the server log (redacted: Cloudinary messages can contain account identifiers / the API key).
+    logger.error('cloudinary', 'upload failed', {
       httpCode,
       message,
       name: err?.name,
       folder,
       resource_type: isVideo ? 'video' : 'image',
-      file: { originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size },
+      file: { mimetype: req.file.mimetype, size: req.file.size },
     })
 
-    // Forward Cloudinary's own status code when it gave us one (401/403/420
-    // etc all mean something specific) instead of flattening everything to
-    // a generic 502.
-    const status = httpCode && httpCode >= 400 && httpCode < 600 ? httpCode : 502
+    // Cloudinary's status code is NOT forwarded. A 401/403 from Cloudinary means OUR credentials are wrong — to the user that
+    // must never look like "your session expired" or "you lack permission". Map it to what the user can act on.
+    const status = httpCode === 400 ? 400 : httpCode === 420 || httpCode === 429 ? 503 : 502
+    const text = status === 400 ? 'That file could not be processed. Please try a different image or video.'
+      : status === 503 ? 'Uploads are busy right now. Please try again in a few minutes.'
+      : 'Upload to cloud storage failed. Please try again.'
     res.status(status).json({
-      message: status === 502 ? 'Upload to cloud storage failed. Please try again.' : message,
-      ...(process.env.NODE_ENV !== 'production' ? { debug: message, hint } : {}),
+      message: text,
+      code: 'UPLOAD_FAILED',
+      requestId: req.id,
+      ...(!isProduction() ? { debug: redactText(message), hint } : {}),
     })
   }
 })
@@ -161,8 +168,8 @@ export const deleteMedia = asyncHandler(async (req, res) => {
     res.json({ message: 'Media deleted.' })
   } catch (err) {
     const { httpCode, message, hint } = describeCloudinaryError(err)
-    console.error('[cloudinary] delete failed:', { httpCode, message, publicId })
-    res.status(httpCode || 502).json({ message, ...(process.env.NODE_ENV !== 'production' ? { hint } : {}) })
+    logger.error('cloudinary', 'delete failed', { httpCode, message, publicId })
+    res.status(502).json({ message: 'Could not remove that file. Please try again.', code: 'UPLOAD_FAILED', requestId: req.id, ...(!isProduction() ? { debug: redactText(message), hint } : {}) })
   }
 })
 // _________________________________________________________________________

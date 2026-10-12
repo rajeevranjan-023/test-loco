@@ -4,6 +4,7 @@ import { api } from '../../services/api.js'
 import { useApiData } from '../../hooks/useApiData.js'
 import { formatPrice } from '../../utils/format.js'
 import SkeletonCard from '../../components/SkeletonCard.jsx'
+import ErrorState from '../../components/ErrorState.jsx'
 
 const SORTS = [
   { key: 'sales', label: 'Highest Selling' },
@@ -13,7 +14,7 @@ const SORTS = [
 
 function AnalyticsPanel() {
   const [sort, setSort] = useState('sales')
-  const { data, loading, error } = useApiData(
+  const { data, loading, error, retry } = useApiData(
     () => api.get(`/api/seller/analytics?sort=${sort}`, { requiresAuth: true }),
     [sort]
   )
@@ -27,7 +28,7 @@ function AnalyticsPanel() {
   }
 
   if (error) {
-    return <p className="detail-empty">Couldn't load analytics: {error.message}</p>
+    return <ErrorState error={error} onRetry={retry} title="Couldn't load analytics: " />
   }
 
   const { totals, products } = data

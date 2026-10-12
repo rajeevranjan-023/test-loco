@@ -22,7 +22,10 @@ const __dirname = path.dirname(__filename)
 // 3. ENV LOADING — seed.js lives in /seed, so .env is one level up.
 // ---------------------------------------------------------------------------
 dotenv.config({ path: path.join(__dirname, '../.env') })
-console.log('ENV CHECK:', process.env.MONGODB_URI)
+// This script WIPES users/shops/products/sales/credits/service providers and writes known passwords to credentials.csv:
+// it must never run against a production database.
+assertDevSeedAllowed('Bulk directory seed (seed.js)')
+console.log('ENV CHECK:', redactUri(process.env.MONGODB_URI)) // never print credentials embedded in the connection string
 
 if (!process.env.MONGODB_URI) {
   console.error('❌ MONGODB_URI is missing. Check your .env file at project root.')
@@ -40,6 +43,7 @@ import Product from '../models/Product.js'
 import Sale from '../models/Sale.js'
 import Credit from '../models/Credit.js'
 import ServiceProvider from '../models/ServiceProvider.js'
+import { assertDevSeedAllowed, redactUri } from './guard.js'
 
 // =============================================================================
 // CONSTANTS / DATA DICTIONARIES
@@ -179,12 +183,23 @@ const CUSTOMER_LAST_NAMES = [...LAST_NAMES]
 
 let usernameCounter = 1000 // guarantees global uniqueness across users/shops/services
 
+// Deterministic PRNG (mulberry32): the same SEED_VALUE always produces the same directory data, so the dev seed is repeatable.
+// Override with SEED_VALUE=<int> to get a different — but still reproducible — data set.
+let _prng = (Number(process.env.SEED_VALUE) || 20240601) >>> 0
+function rand() {
+  _prng = (_prng + 0x6d2b79f5) >>> 0
+  let t = _prng
+  t = Math.imul(t ^ (t >>> 15), t | 1)
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+}
+
 function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min
+  return Math.floor(rand() * (max - min + 1)) + min
 }
 
 function randomFloat(min, max, decimals = 2) {
-  const val = Math.random() * (max - min) + min
+  const val = rand() * (max - min) + min
   return Number(val.toFixed(decimals))
 }
 
@@ -193,7 +208,7 @@ function pick(arr) {
 }
 
 function pickMany(arr, count) {
-  const shuffled = [...arr].sort(() => 0.5 - Math.random())
+  const shuffled = [...arr].sort(() => 0.5 - rand())
   return shuffled.slice(0, Math.min(count, arr.length))
 }
 
@@ -422,7 +437,7 @@ async function buildShops(shopPlan, shopUsers) {
         lng: jitter(plan.city.lng, 0.08),
       },
       businessType: pick(['Retail', 'Wholesale', 'Both']),
-      homeDelivery: Math.random() > 0.5,
+      homeDelivery: rand() > 0.5,
       timing: {
         open: pick(['08:00', '09:00', '10:00']),
         close: pick(['19:00', '20:00', '21:00', '22:00']),
@@ -514,8 +529,8 @@ async function buildSales(shops, products) {
         quantity,
         priceAtSale,
         costAtSale,
-        channel: Math.random() > 0.5 ? 'online' : 'offline',
-        customerName: Math.random() > 0.3 ? randomCustomerName() : '',
+        channel: rand() > 0.5 ? 'online' : 'offline',
+        customerName: rand() > 0.3 ? randomCustomerName() : '',
         createdAt: randomDate(30),
       })
 
@@ -559,9 +574,9 @@ async function buildCredits(sales) {
   const creditDocs = []
 
   for (const sale of sales) {
-    if (Math.random() > 0.15) continue // ~15% of sales create a credit line
+    if (rand() > 0.15) continue // ~15% of sales create a credit line
 
-    const isPaid = Math.random() > 0.4 // ~60% already paid
+    const isPaid = rand() > 0.4 // ~60% already paid
     const dueDate = new Date(sale.createdAt.getTime() + randomInt(3, 21) * 24 * 60 * 60 * 1000)
 
     creditDocs.push({

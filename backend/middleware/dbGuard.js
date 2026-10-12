@@ -1,0 +1,13 @@
+import { isDbReady, dbStateName } from '../config/db.js'
+import { DB_UNAVAILABLE } from './errorHandler.js'
+import { logThrottled } from '../utils/logger.js'
+
+// Fail fast while the database is not connected: answer 503 immediately instead of letting Mongoose queue the query and
+// time out (or a client wait). Mounted on /api AFTER the health routes, so health can still report the truth.
+// No request is retried or replayed here — a refused request never reached a controller, so no write was attempted.
+export function requireDatabase(req, res, next) {
+  if (isDbReady()) return next()
+  logThrottled('warn', 'db-unavailable', 10_000, 'db', `Refusing ${req.method} requests: database is ${dbStateName()}.`)
+  res.set('Retry-After', String(DB_UNAVAILABLE.retryAfter))
+  res.status(DB_UNAVAILABLE.status).json({ message: DB_UNAVAILABLE.message, code: DB_UNAVAILABLE.code, retryAfter: DB_UNAVAILABLE.retryAfter, requestId: req.id })
+}

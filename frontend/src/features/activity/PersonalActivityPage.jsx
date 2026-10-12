@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { useTitle } from '../../hooks/title.js'
 import { DEFAULT_AVATAR } from '../../utils/placeholders.js'
 import { profilePath } from '../../utils/username.js'
+import ErrorState from '../../components/ErrorState.jsx'
 
 // Personal analytics / activity — the Analytics tab for an account WITHOUT a business.
 // This is only the base structure: the page renders the SECTIONS list below, each section is an independent component that
@@ -70,7 +71,7 @@ export default function PersonalActivityPage() {
       <div className="container mx-auto grid max-w-3xl gap-4 px-4">
         <h1 className="text-2xl font-semibold">My activity</h1>
         {state.loading && <p className="text-sm text-gray-500" aria-busy="true">Loading your activity…</p>}
-        {state.error && <p role="alert" className="text-sm text-red-600">Couldn't load your activity: {state.error.message}</p>}
+        {state.error && <ErrorState error={state.error} onRetry={state.retry} title="Couldn't load your activity: " className="text-sm text-red-600" />}
         {state.data && SECTIONS.map(({ id, Component }) => <Component key={id} user={user} data={state.data} />)}
       </div>
     </section>

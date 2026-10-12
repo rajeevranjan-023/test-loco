@@ -77,7 +77,7 @@ for (const [key, name] of Object.entries(models)) {
 const { default: Center } = await import('../models/StudyCenter.js')
 const cErr = new Center({ userId: new mongoose.Types.ObjectId(), username: '@brightstudy238', centerName: 'Bright Study Center', ownerName: 'x', phone: '9876500102', config: d.config }).validateSync()
 assert.ok(!cErr, 'StudyCenter doc'); console.log('✅ schema-valid: StudyCenter')
-const u = new User({ name: 'Rajeev Kumar', email: 'brightstudycenter@test.com', username: '@brightstudy238', password: 'StudyCenter@123', role: 'seller', sellerType: 'study_center' })
+const u = new User({ name: 'Rajeev Kumar', email: 'demo.study@example.com', username: '@brightstudy238', password: 'StudyCenter@123', role: 'seller', sellerType: 'study_center' })
 assert.ok(!u.validateSync(), 'User doc with sellerType study_center'); console.log('✅ schema-valid: User (sellerType study_center)')
 
 // due ages must not depend on the clock time the seed runs at (a due "5 days ago" is 5d at 00:05 and at 23:58)

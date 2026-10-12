@@ -13,27 +13,37 @@ export const isRevoked = async (token) => !!(await RevokedToken.exists({ hash: t
 // _________________________________________________________________________________
 // =================================================================================
 
+// Only a token problem (missing / forged / expired / logged out / user deleted) is a 401. Anything else that goes wrong while
+// checking the token — the database being unreachable above all — is NOT "your session expired": it is rethrown so the central
+// error handler answers 503. (It used to answer 401 for everything, which made the frontend log users out during a DB outage.)
+const requireJwtSecret = () => { if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured') } // misconfiguration → logged 500, not a silent 401 for everyone
+const findUser = async (id) => {
+  try { return await User.findById(id) } catch (e) { if (e?.name === 'CastError') return null; throw e } // a malformed id inside a token = no such user
+}
+
 export const protect = asyncHandler(async (req, res, next) => {   // is user login or not, if yes then next() else return 401
   const header = req.headers.authorization                       // Get the Authorization header from the req
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Not authorized, please log in.' })
   }
 
+  requireJwtSecret()
+  const token = header.split(' ')[1]
+  let decoded
   try {
-    const token = header.split(' ')[1]
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    if (await isRevoked(token)) {   // logged out — a stale copy of this token must never restore the session
-      return res.status(401).json({ message: 'Session expired or invalid, please log in again.' })
-    }
-    const user = await User.findById(decoded.id)
-    if (!user) {
-      return res.status(401).json({ message: 'User no longer exists.' })
-    }
-    req.user = user
-    next()
-  } catch (err) {
-    return res.status(401).json({ message: 'Session expired or invalid, please log in again.' })
+    decoded = jwt.verify(token, process.env.JWT_SECRET)
+  } catch {
+    return res.status(401).json({ message: 'Session expired or invalid, please log in again.', code: 'SESSION_EXPIRED' })
   }
+  if (await isRevoked(token)) {   // logged out — a stale copy of this token must never restore the session
+    return res.status(401).json({ message: 'Session expired or invalid, please log in again.', code: 'SESSION_EXPIRED' })
+  }
+  const user = await findUser(decoded.id)
+  if (!user) {
+    return res.status(401).json({ message: 'User no longer exists.', code: 'SESSION_EXPIRED' })
+  }
+  req.user = user
+  next()
 })
 
 // _________________________________________________________________________________
@@ -47,14 +57,17 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   if (!header || !header.startsWith('Bearer ')) {
     return next()
   }
+  requireJwtSecret()
+  const token = header.split(' ')[1]
+  let decoded
   try {
-    const token = header.split(' ')[1]
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const user = (await isRevoked(token)) ? null : await User.findById(decoded.id)
-    if (user) req.user = user
-  } catch (err) {
-    // Invalid/expired token on a public route — just proceed as a guest.
+    decoded = jwt.verify(token, process.env.JWT_SECRET)
+  } catch {
+    return next() // Invalid/expired token on a public route — just proceed as a guest.
   }
+  // A database failure here is NOT "guest": it is rethrown (→ 503) so a logged-in user's action is never silently treated as anonymous.
+  const user = (await isRevoked(token)) ? null : await findUser(decoded.id)
+  if (user) req.user = user
   next()
 })
 

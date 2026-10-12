@@ -19,6 +19,7 @@
 import crypto from 'crypto'
 import OtpChallenge from '../models/OtpChallenge.js'
 import { isProduction, safeEqual } from './authHelpers.js'
+import { logger } from './logger.js'
 
 // The development-only code. Intentionally defined here and nowhere else in the project.
 const DEV_FIXED_CODE = '1435'
@@ -125,7 +126,7 @@ export async function requestOtp({ purpose, subject, phone }) {
     try { await SMS_PROVIDERS[cfg.provider].send(phone, `${code} is your Loco verification code. It expires in ${Math.round(cfg.ttlSeconds / 60)} minutes. Do not share it.`) }
     catch (err) {
       await OtpChallenge.deleteOne({ purpose, subject })
-      console.error('[otp] SMS delivery failed:', err.message) // message only — never the code or the number
+      logger.error('otp', `SMS delivery failed: ${err.message}`) // message only (redacted) — never the code or the number
       throw new OtpError('DELIVERY_FAILED', 'We could not send the verification code. Please try again.')
     }
   }

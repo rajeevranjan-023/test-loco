@@ -51,10 +51,13 @@ router.put('/sales/:saleId', updateSale)
 router.get('/bills', listBills)
 
 // _________________________________________________________________________
+// LEGACY (kept for backward compatibility): only called by features/seller/AnalyticsPanel.jsx (not mounted by the router) and asserted by
+// billing.int / billing2.int / smoke tests. Current screens use /insights (shop), /billing/summary (service) and /study/analytics.
 import { getAnalytics } from '../controllers/analyticsController.js'
 router.get('/analytics', getAnalytics)
 
 // Full SaaS-style dashboard payload (KPIs, charts, tables) for /analytics page
+// LEGACY: no caller in frontend/src, frontend tests or backend tests (traced). Kept because external/older clients cannot be ruled out.
 import { getDashboard } from '../controllers/dashboardController.js'
 router.get('/dashboard', getDashboard)
 import { getInsights } from '../controllers/insightsController.js'

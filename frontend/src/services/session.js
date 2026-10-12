@@ -47,3 +47,9 @@ export const onIdentityReset = (fn) => { resetters.add(fn); return () => resette
 export const trackRequest = (controller) => { inflight.add(controller); return () => inflight.delete(controller) }
 export const setUnauthorizedHandler = (fn) => { unauthorized = fn }
 export const notifyUnauthorized = (usedToken) => { if (unauthorized) unauthorized(usedToken) }
+
+// "Your session expired" notice: set when the server rejected our token, shown once on the login page, then forgotten.
+const EXPIRED_KEY = 'lf_session_expired'
+export const flagSessionExpired = () => { try { sessionStorage.setItem(EXPIRED_KEY, '1') } catch { /* private mode: no notice, still logged out */ } }
+export const peekSessionExpired = () => { try { return sessionStorage.getItem(EXPIRED_KEY) === '1' } catch { return false } }
+export const clearSessionExpired = () => { try { sessionStorage.removeItem(EXPIRED_KEY) } catch { /* ignore */ } }

@@ -20,8 +20,9 @@ import BillDraft from '../models/BillDraft.js'
 import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'
 import { generateStudy, CENTER } from './studyData.js'
+import { assertDevSeedAllowed } from './guard.js'
 
-export const STUDY_LOGIN = { email: 'brightstudycenter@test.com', password: 'StudyCenter@123' } // development / testing only
+export const STUDY_LOGIN = { email: 'demo.study@example.com', password: 'StudyCenter@123' } // development / testing only
 
 async function wipe(email) {
   const old = await User.findOne({ email })
@@ -36,6 +37,7 @@ async function wipe(email) {
 }
 
 export async function seedStudyCenter() {
+  assertDevSeedAllowed('Study Center seed') // wipe() below deletes the account with this email — never in production
   await wipe(STUDY_LOGIN.email)
   const user = await User.create({ name: CENTER.owner, email: STUDY_LOGIN.email, username: CENTER.username, password: STUDY_LOGIN.password, role: 'seller', sellerType: 'study_center', phone: CENTER.phone, bio: 'Quiet, well-lit study space with 60 seats, courses and test series.' })
   const center = await StudyCenter.create({
@@ -76,6 +78,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   await mongoose.connect(process.env.MONGODB_URI)
   const r = await seedStudyCenter()
   console.log('Seeded Bright Study Center:', r)
-  console.log(`Login → ${STUDY_LOGIN.email} / ${STUDY_LOGIN.password}   (development only)`)
+  console.log(`Seeded dev account ${STUDY_LOGIN.email} (credentials: seed/DEV_ACCOUNTS.md)`)
   await mongoose.disconnect()
 }

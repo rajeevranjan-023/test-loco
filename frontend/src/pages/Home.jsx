@@ -38,7 +38,7 @@ export default function Home() {
       <Container>
         {error && !data && (
           <div role="alert" className="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-100">
-            {error.message} <button type="button" onClick={retry} className="ml-2 font-semibold underline">Try again</button>
+            {error.message} {error.retryable !== false && <button type="button" onClick={retry} className="ml-2 font-semibold underline">Try again</button>}
           </div>
         )}
         <CategoryGrid items={data?.categories} onSelect={search} />

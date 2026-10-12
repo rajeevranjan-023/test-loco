@@ -21,7 +21,7 @@ export const authApi = {
   changePhone: () => api.post('/api/auth/register/otp/change-phone', {}, withReg()),
   checkUsername: (username) => api.get(`/api/auth/register/check-username?username=${encodeURIComponent(username)}`, withReg()),
   complete: (body) => api.post('/api/auth/register/complete', body, withReg()),
-  uploadAvatar: (file) => { const f = new FormData(); f.append('file', file); return api.post('/api/auth/register/avatar', f, withReg()) },
+  uploadAvatar: (file) => { const f = new FormData(); f.append('file', file); return api.post('/api/auth/register/avatar', f, { ...withReg(), timeout: 120000 }) },
   updateOnboarding: (body) => api.patch('/api/auth/onboarding', body, { requiresAuth: true }),
   forgotPassword: (identifier) => api.post('/api/auth/forgot-password', { identifier }),
   resetPassword: (body) => api.post('/api/auth/reset-password', body),

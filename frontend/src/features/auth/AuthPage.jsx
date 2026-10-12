@@ -3,6 +3,8 @@ import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react
 import { useAuth } from '../../context/AuthContext.jsx'
 import { BASE_URL } from '../../services/api.js'
 import { authApi, regToken } from '../../services/authApi.js'
+import { MESSAGES } from '../../services/apiError.js'
+import { peekSessionExpired, clearSessionExpired } from '../../services/session.js'
 import { destinationAfterAuth, rememberNext, safeNext } from '../../utils/redirect.js'
 import { useTitle } from '../../hooks/title.js'
 import { Alert, AuthShell, Btn, Field, GoogleButton, PasswordInput, TextInput } from './ui.jsx'
@@ -25,7 +27,9 @@ export default function AuthPage({ mode }) {
   const location = useLocation()
   const { isAuthenticated, loading, user } = useAuth()
   const next = safeNext(params.get('next') || location.state?.from || '/')
-  const urlError = ERRORS[params.get('error')] || ''
+  const [expired] = useState(peekSessionExpired) // the server ended this session (token expired / logged out elsewhere)
+  useEffect(() => { if (expired) clearSessionExpired() }, [expired]) // shown once, then forgotten
+  const urlError = ERRORS[params.get('error')] || (expired ? MESSAGES.sessionExpired : '')
 
   if (!loading && isAuthenticated) return <Navigate to={destinationAfterAuth(user, next)} replace />
 

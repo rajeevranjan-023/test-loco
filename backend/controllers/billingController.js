@@ -16,6 +16,7 @@ import StudyMember from '../models/StudyMember.js'
 import { hooksFor } from '../utils/businessHooks.js'
 import { r2 as round2, buildDocument, paymentStatusOf } from '../utils/billing.js'
 import { paymentsOf } from '../utils/billPayments.js'
+import { dailySeries, topItems } from '../utils/billingSeries.js'
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const sid = (req) => req.sellerAccount._id
@@ -282,8 +283,10 @@ export const billingSummary = asyncHandler(async (req, res) => {
   const totalRevenue = round2(Object.values(rev).reduce((a, b) => a + b, 0)) // net of discount, EXCLUDING tax
   const grandTotal = round2(bills.reduce((s, b) => s + b.totalAmount, 0)) // what customers were billed (revenue + tax)
   const goodsRevenue = rev.product + rev.material
+  // Additive (existing fields unchanged): per-day revenue and top billed lines, read from what each bill already stored (utils/billingSeries.js).
+  const daily = dailySeries(bills), topItemsList = topItems(bills)
   res.json({
-    days, bills: bills.length, totalRevenue, grandTotal, discount: round2(discountTotal), tax: round2(taxTotal),
+    days, daily, topItems: topItemsList, bills: bills.length, totalRevenue, grandTotal, discount: round2(discountTotal), tax: round2(taxTotal),
     revenue: Object.fromEntries(Object.entries(rev).map(([k, v]) => [k, round2(v)])),
     productCost, materialCost, inventoryConsumed: round2(consumedUnits + legacyUnits), materialUnits: round2(materialUnits),
     grossProfit: round2(totalRevenue - productCost - materialCost), // service/labour carry no cost of goods here

@@ -6,6 +6,7 @@ import { googleOAuth } from '../utils/googleOAuth.js'
 import { generateToken } from '../utils/generateToken.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { clientOrigin, isProduction, maskEmail, randomToken, safeEqual, safeNext, sha256 } from '../utils/authHelpers.js'
+import { logger } from '../utils/logger.js'
 
 const COOKIE = 'lf_oauth_csrf'
 const REG_TTL_MS = 24 * 3600 * 1000
@@ -42,7 +43,7 @@ export const googleCallback = asyncHandler(async (req, res) => {
 
   let g
   try { g = await googleOAuth.exchangeCode(String(code), payload.n) }
-  catch (err) { console.error('[google] token verification failed:', err.message); return failTo(res, 'google_failed', payload.next) }
+  catch (err) { logger.error('google', `token verification failed: ${err.message}`); return failTo(res, 'google_failed', payload.next) }
   if (!g.sub || !g.email) return failTo(res, 'google_failed', payload.next)
   if (!g.emailVerified) return failTo(res, 'google_email_unverified', payload.next)
 

@@ -7,6 +7,7 @@ export function useApiData(fetcher, deps = []) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [tick, setTick] = useState(0) // bump → run the fetcher again (retry after a failure)
 
   useEffect(() => {
     let cancelled = false
@@ -31,7 +32,7 @@ export function useApiData(fetcher, deps = []) {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [...deps, tick])
 
-  return { data, loading, error }
+  return { data, loading, error, retry: () => setTick((n) => n + 1) }
 }

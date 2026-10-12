@@ -10,6 +10,7 @@ import { useAccess } from '../../components/UsernameRoute.jsx'
 import { profilePath, sectionOf, toOwnerPath } from '../../utils/username.js'
 import { BusinessProvider, useBusiness } from '../../context/BusinessContext.jsx'
 import { iconOf } from '../../components/ownerIcons.js'
+import { RouteErrorBoundary } from '../../components/ErrorBoundary.jsx'
 
 // ONE page width/padding for the whole owner area — header, every page (profile included) and footer use it,
 // so switching tabs never shifts the content sideways.
@@ -90,7 +91,7 @@ function Shell({ sum }) {
         <OwnerNav username={username} className="flex gap-1 overflow-x-auto border-t border-[#EEF2F7] px-3 py-1.5 [scrollbar-width:none] lg:hidden" />
       </header>
 
-      <main className={`${PAGE} py-5`}><Outlet context={{ summary: s, reloadSummary: sum.reload, urange, setUrange }} /></main>
+      <main className={`${PAGE} py-5`}><RouteErrorBoundary><Outlet context={{ summary: s, reloadSummary: sum.reload, urange, setUrange }} /></RouteErrorBoundary></main>
 
       <footer className="mt-10 bg-[#0B0B0E] text-white">
         <div className={`${PAGE} grid gap-8 py-9 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]`}>

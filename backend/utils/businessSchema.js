@@ -41,7 +41,10 @@ const STUDY_NAV = [
 // route key → frontend module. The router renders whatever module the schema names for that URL section;
 // a section a schema does not list does not exist for that business (it redirects to the profile).
 const SHOP_MODULES = { dashboard: 'orders', billing: 'billing', udhar: 'dues', analytics: 'analytics', inventory: 'inventory', customer: 'people', add: 'billing', bill: 'bill', order: 'bill', products: 'products', offers: 'offers', messages: 'messages', shop: 'shopProfile', settings: 'settings' }
-const SERVICE_MODULES = SHOP_MODULES
+// Service providers share the shop's billing/dues/inventory/customer screens but NOT Offers or Messages (the API answers 403 for them),
+// and they get the billing-summary analytics module instead of the shop's product-centric one.
+const { offers: _o, messages: _m, ...SHOP_SHARED_MODULES } = SHOP_MODULES
+const SERVICE_MODULES = { ...SHOP_SHARED_MODULES, analytics: 'billingAnalytics' }
 const STUDY_MODULES = { dashboard: 'studyDashboard', billing: 'billing', members: 'members', member: 'memberDetail', courses: 'courses', seats: 'seats', dues: 'dues', analytics: 'configAnalytics', inventory: 'inventory', add: 'addMenu', bill: 'bill', order: 'bill', shop: 'centerProfile', settings: 'settings', customer: 'members' }
 
 // "Add" menu of a study centre (the shop's Add tab is the billing screen, as before)
@@ -85,9 +88,9 @@ const SCHEMAS = {
     billing: SHOP_BILLING, txnLabels: SHOP_TXN_LABEL,
     capabilities: { inventory: true, products: true, seatManagement: false, courses: false, members: false },
     brand: { icon: 'Store', tagline: (cat) => `Your Local ${cat || 'Business'} Partner` },
-    profile: { layout: 'service' }, dashboard: { provider: 'orders' }, analytics: { provider: 'shop' },
+    profile: { layout: 'service' }, dashboard: { provider: 'orders' }, analytics: { provider: 'billing' },
     footerLinks: [['Dashboard', 'dashboard'], ['Analytics', 'analytics'], ['Inventory', 'inventory']],
-    userMenu: [['Products', '/analytics/products'], ['Offers & Discounts', '/analytics/offers'], ['Messages', '/analytics/messages'], ['Shop Details', '/analytics/profile'], ['Settings', '/analytics/settings']],
+    userMenu: [['Products', '/analytics/products'], ['Business Details', '/analytics/profile'], ['Settings', '/analytics/settings']],
   },
   study_center: {
     type: 'study_center', label: 'Study Center / Library', terms: STUDY_TERMS, nav: STUDY_NAV, modules: STUDY_MODULES, addMenu: STUDY_ADD_MENU,

@@ -9,7 +9,7 @@ function fileFilter(req, file, cb) {
   const isImage = file.mimetype.startsWith('image/')
   const isVideo = file.mimetype.startsWith('video/')
   if (!isImage && !isVideo) {
-    return cb(new Error('Only image or video files are allowed.'))
+    return cb(Object.assign(new Error('Only image or video files are allowed.'), { status: 400, expose: true, code: 'UNSUPPORTED_FILE_TYPE' }))
   }
   cb(null, true)
 }

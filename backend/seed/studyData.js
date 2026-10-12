@@ -11,7 +11,7 @@ const DAY = 864e5
 const oid = () => new mongoose.Types.ObjectId()
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100
 
-export const CENTER = { name: 'Bright Study Center', code: '#STU102', username: '@brightstudy238', owner: 'Rajeev Kumar', phone: '9876500102', email: 'brightstudycenter@test.com' }
+export const CENTER = { name: 'Bright Study Center', code: '#STU102', username: '@brightstudy238', owner: 'Rajeev Kumar', phone: '9876500102', email: 'demo.study@example.com' }
 
 // the centre's own configuration (what another centre would configure differently): zones, naming, plans, slots, charge types, materials
 export function studyConfig() {

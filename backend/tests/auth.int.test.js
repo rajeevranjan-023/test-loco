@@ -3,6 +3,7 @@
 // Google's servers can't be reached from CI, so ONLY `googleOAuth.exchangeCode` is stubbed; state, CSRF cookie, tickets,
 // linking, registration, OTP and sessions all run for real.
 import assert from 'node:assert/strict'
+import 'dotenv/config'
 process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
 process.env.OTP_DEV_FIXED = 'true'; process.env.CLIENT_ORIGIN = 'http://localhost:5173'
 process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com'; process.env.GOOGLE_CLIENT_SECRET = 'test-secret'
@@ -19,6 +20,7 @@ const { default: RegistrationSession } = await import('../models/RegistrationSes
 const { googleOAuth } = await import('../utils/googleOAuth.js')
 const otp = await import('../utils/otp.js')
 const { safeNext, normalizeIndianMobile, validatePassword } = await import('../utils/authHelpers.js')
+{ const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'auth.int') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
 // Build every declared index (unique / sparse / compound) for real — only the TTL option is dropped for FerretDB.
 for (const M of Object.values(mongoose.models)) {
@@ -55,6 +57,13 @@ ok(true, 'protected API routes (me, onboarding, follow, seller start/products/sa
 ok((await req('GET', '/api/shops')).status === 200 && (await req('GET', '/api/home')).status !== 401 && (await req('GET', '/api/search?q=a')).status !== 401, 'public listings, home and search need no login')
 ok((await req('POST', '/api/auth/register/personal', {})).status === 401 && (await req('POST', '/api/auth/register/complete', {})).status === 401, 'registration steps refuse requests without a registration token')
 ok((await req('POST', '/api/auth/register/personal', {}, { reg: 'forged-token' })).status === 401, 'a forged registration token is refused')
+{ // CORS permission is not authorization: an allowed-origin preflight succeeds, yet the real request is still token-checked.
+  const pf = await req('OPTIONS', '/api/auth/register/session', null, { headers: { Origin: 'http://localhost:5173', 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'x-registration-token' } })
+  ok(pf.status === 204 && /x-registration-token/i.test(pf.res.headers.get('access-control-allow-headers') || ''), 'preflight with x-registration-token is allowed for the frontend origin')
+  const noTok = await req('GET', '/api/auth/register/session', null, { headers: { Origin: 'http://localhost:5173' } })
+  ok(noTok.status === 401 && noTok.data.code === 'REG_EXPIRED', 'allowed origin without a registration token is still 401 (CORS is not authorization)')
+  ok((await req('GET', '/api/auth/register/session', null, { reg: 'forged-token', headers: { Origin: 'http://localhost:5173' } })).status === 401, 'allowed origin with a forged registration token is still 401')
+}
 
 // ───────────────────────── safe redirects ─────────────────────────
 ok(safeNext('/shop/abc?x=1') === '/shop/abc?x=1' && safeNext('//evil.com') === '/' && safeNext('https://evil.com') === '/' && safeNext('/\\evil.com') === '/' && safeNext('javascript:alert(1)') === '/' && safeNext('/a\nb') === '/' && safeNext(undefined) === '/', 'safeNext allows internal paths only (rejects //host, https://, backslash, javascript:, control chars)')

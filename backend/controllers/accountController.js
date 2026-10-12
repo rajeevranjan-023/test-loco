@@ -3,6 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { ACCOUNT_TYPES, INTERESTS, EMAIL_RE, clientOrigin, randomToken, sha256, validatePassword } from '../utils/authHelpers.js'
 import { normalizeUsername } from '../utils/username.js'
 import { sendMail } from '../utils/mailer.js'
+import { logger } from '../utils/logger.js'
 
 const BUSINESS_TYPES = ['shop', 'service', 'study']
 const STEPS = ['account-type', 'business', 'interests', 'location', 'done']
@@ -62,7 +63,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
     await user.save()
     const link = `${clientOrigin()}/reset-password?token=${encodeURIComponent(token)}`
     try { await sendMail({ to: user.email, subject: 'Reset your Loco password', text: `Hi ${user.name.split(' ')[0]},\n\nUse this link to choose a new password (valid for 30 minutes):\n${link}\n\nIf you did not ask for this, you can ignore this email.` }) }
-    catch (err) { console.error('[forgot-password] mail failed:', err.message) }
+    catch (err) { logger.error('forgot-password', `mail failed: ${err.message}`) }
   }
   res.json(generic)
 })

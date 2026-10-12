@@ -9,6 +9,7 @@ import {
 import { requestOtp, verifyOtp, isOtpVerified, cancelOtp, codeLength, isDevFixedActive, otpConfig, OtpError, OTP_FAILURE_MESSAGES } from '../utils/otp.js'
 import { isCloudinaryConfigured } from '../config/cloudinary.js'
 import { streamUpload } from './mediaController.js'
+import { logger } from '../utils/logger.js'
 
 const PURPOSE = 'registration'
 const REG_TTL_MS = 24 * 3600 * 1000
@@ -162,7 +163,7 @@ export const uploadRegistrationAvatar = asyncHandler(async (req, res) => {
   try {
     const r = await streamUpload(req.file.buffer, { folder: 'servop/avatars', resource_type: 'image', transformation: [{ width: 600, height: 600, crop: 'limit', quality: 'auto:good' }] })
     res.status(201).json({ url: r.secure_url })
-  } catch (err) { console.error('[register] avatar upload failed:', err.message); res.status(502).json({ message: 'Upload failed. You can add a photo later.' }) }
+  } catch (err) { logger.error('register', `avatar upload failed: ${err.message}`); res.status(502).json({ message: 'Upload failed. You can add a photo later.' }) }
 })
 
 // POST /api/auth/register/complete { username, password, confirmPassword }

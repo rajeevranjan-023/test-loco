@@ -9,6 +9,7 @@ const { default: mongoose } = await import('mongoose'); mongoose.set('autoIndex'
 const { default: inner } = await import('../server.js')
 const { connectDB } = await import('../config/db.js')
 const { googleOAuth } = await import('../utils/googleOAuth.js')
+{ const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'e2e-harness') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
 for (const M of Object.values(mongoose.models)) for (const [f, o] of M.schema.indexes()) { const x = { ...o }; delete x.expireAfterSeconds; delete x.background; await M.collection.createIndex(f, x).catch(() => {}) }
 
