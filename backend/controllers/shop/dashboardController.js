@@ -1,11 +1,11 @@
-import Bill from '../models/common/Bill.js'
-import Sale from '../models/common/Sale.js'
-import Product from '../models/common/Product.js'
-import Credit from '../models/shop/Credit.js'
-import Message from '../models/shop/Message.js'
-import { payLabel } from '../utils/common/payLabel.js'
-import { asyncHandler } from '../utils/asyncHandler.js'
-import { displayBillId } from '../utils/common/billId.js'
+import Bill from '../../models/common/Bill.js'
+import Sale from '../../models/common/Sale.js'
+import Product from '../../models/common/Product.js'
+import Credit from '../../models/shop/Credit.js'
+import Message from '../../models/shop/Message.js'
+import { payLabel } from '../../utils/common/payLabel.js'
+import { asyncHandler } from '../../utils/asyncHandler.js'
+import { displayBillId } from '../../utils/common/billId.js'
 
 const DAY = 864e5
 const pct = (cur, prev) => (prev ? Math.round(((cur - prev) / prev) * 100) : cur ? 100 : 0)

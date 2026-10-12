@@ -1,11 +1,11 @@
-import Bill from '../models/common/Bill.js'
-import Sale from '../models/common/Sale.js'
-import Product from '../models/common/Product.js'
-import Udhar from '../models/common/Udhar.js'
-import UdharHistory from '../models/common/UdharHistory.js'
-import Message from '../models/shop/Message.js'
-import { buildInsights } from '../utils/shop/insights.js'
-import { asyncHandler } from '../utils/asyncHandler.js'
+import Bill from '../../models/common/Bill.js'
+import Sale from '../../models/common/Sale.js'
+import Product from '../../models/common/Product.js'
+import Udhar from '../../models/common/Udhar.js'
+import UdharHistory from '../../models/common/UdharHistory.js'
+import Message from '../../models/shop/Message.js'
+import { buildInsights } from '../../utils/shop/insights.js'
+import { asyncHandler } from '../../utils/asyncHandler.js'
 
 // GET /api/seller/insights?days=30&channel=both|online|offline
 export const getInsights = asyncHandler(async (req, res) => {

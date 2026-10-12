@@ -53,14 +53,14 @@ router.get('/bills', listBills)
 // _________________________________________________________________________
 // LEGACY (kept for backward compatibility): only called by features/seller/AnalyticsPanel.jsx (not mounted by the router) and asserted by
 // billing.int / billing2.int / smoke tests. Current screens use /insights (shop), /billing/summary (service) and /study/analytics.
-import { getAnalytics } from '../controllers/analyticsController.js'
+import { getAnalytics } from '../controllers/shop/analyticsController.js'
 router.get('/analytics', getAnalytics)
 
 // Full SaaS-style dashboard payload (KPIs, charts, tables) for /analytics page
 // LEGACY: no caller in frontend/src, frontend tests or backend tests (traced). Kept because external/older clients cannot be ruled out.
-import { getDashboard } from '../controllers/dashboardController.js'
+import { getDashboard } from '../controllers/shop/dashboardController.js'
 router.get('/dashboard', getDashboard)
-import { getInsights } from '../controllers/insightsController.js'
+import { getInsights } from '../controllers/shop/insightsController.js'
 router.get('/insights', getInsights)
 
 // Keyboard-first billing screen
@@ -116,7 +116,7 @@ import {
   updateCredit,
   togglePinCredit,
   markCreditPaid,
-  deleteCredit,} from '../controllers/creditController.js'
+  deleteCredit,} from '../controllers/shop/creditController.js'
 router.get('/credits', listCredits)
 router.post('/credits', addCredit)
 router.patch('/credits/:creditId', updateCredit)

@@ -1,5 +1,5 @@
-import Credit from '../models/shop/Credit.js'
-import { asyncHandler } from '../utils/asyncHandler.js'
+import Credit from '../../models/shop/Credit.js'
+import { asyncHandler } from '../../utils/asyncHandler.js'
 
 const MAX_PINNED = 4
 
