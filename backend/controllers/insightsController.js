@@ -3,7 +3,7 @@ import Sale from '../models/Sale.js'
 import Product from '../models/Product.js'
 import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'
-import Message from '../models/Message.js'
+import Message from '../models/shop/Message.js'
 import { buildInsights } from '../utils/insights.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 

@@ -1,7 +1,7 @@
 import { escapeRegex } from '../utils/escapeRegex.js'
 import Product from '../models/Product.js'
-import ServiceProvider from '../models/ServiceProvider.js'
-import Shop from '../models/Shop.js'
+import ServiceProvider from '../models/services/ServiceProvider.js'
+import Shop from '../models/shop/Shop.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 // GET /api/search?q=fan

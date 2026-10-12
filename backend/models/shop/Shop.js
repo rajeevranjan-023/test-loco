@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { billingConfigField } from './billingConfigSchema.js'
+import { billingConfigField } from '../billingConfigSchema.js'
 
 const shopSchema = new mongoose.Schema(
   {

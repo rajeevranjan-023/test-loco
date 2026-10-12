@@ -15,7 +15,7 @@ mongoose.set('autoIndex', false) // indexes are built below so TTL can be skippe
 const { default: app } = await import('../server.js')
 const { connectDB } = await import('../config/db.js')
 const { default: User } = await import('../models/User.js')
-const { default: Shop } = await import('../models/Shop.js')
+const { default: Shop } = await import('../models/shop/Shop.js')
 const { default: RegistrationSession } = await import('../models/RegistrationSession.js')
 const { googleOAuth } = await import('../utils/googleOAuth.js')
 const otp = await import('../utils/otp.js')

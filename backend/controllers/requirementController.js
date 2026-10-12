@@ -1,6 +1,6 @@
 import Requirement from '../models/Requirement.js'
-import Shop from '../models/Shop.js'
-import ServiceProvider from '../models/ServiceProvider.js'
+import Shop from '../models/shop/Shop.js'
+import ServiceProvider from '../models/services/ServiceProvider.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 // _________________________________________________________________________

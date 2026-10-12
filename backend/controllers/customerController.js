@@ -4,7 +4,7 @@ import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import Sale from '../models/Sale.js'
-import Shop from '../models/Shop.js'
+import Shop from '../models/shop/Shop.js'
 import { statusOf, EPS, r2, applyLedger } from '../utils/ledger.js'
 import { displayBillId } from '../utils/billId.js'
 

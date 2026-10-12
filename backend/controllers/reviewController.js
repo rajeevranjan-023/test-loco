@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
 import Review from '../models/Review.js'
-import Shop from '../models/Shop.js'
+import Shop from '../models/shop/Shop.js'
 import StudyCenter from '../models/library/StudyCenter.js'
-import ServiceProvider from '../models/ServiceProvider.js'
+import ServiceProvider from '../models/services/ServiceProvider.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 function getTargetModel(targetType) {
