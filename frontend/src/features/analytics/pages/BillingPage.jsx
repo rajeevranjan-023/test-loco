@@ -51,7 +51,9 @@ const DEFAULT_CFG = { capabilities: { products: true, partialPayment: true, udha
 
 // Customer search only starts with enough input: name ≥ 2 characters · phone ≥ 3 digits. Below that → no request at all.
 const searchable = (q) => { const t = q.trim(); return /^[\d\s+-]+$/.test(t) ? t.replace(/\D/g, '').length >= 3 : t.length >= 2 }
+// A complete 10-digit number (optionally +91): nothing more will be typed, so its search goes out at once.
 const fullPhone = (q) => { const t = q.trim(); if (!/^[\d\s+-]+$/.test(t)) return false; let d = t.replace(/\D/g, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return d.length === 10 }
+// Keyboard (↑ ↓ Enter) only ever lands on the shop's own customers and "Create new". The global-directory suggestion is click-only; the "Searching…" row is inert.
 const canKey = (it) => !!it && (it.t === 'add' || (it.t === 'c' && it.c.source !== 'global'))
 
 /* ───────── bill preview · share · print ───────── */
@@ -432,13 +434,17 @@ export default function BillingPage() {
     }
     else if (e.key === 'Escape') { e.preventDefault(); cOpen ? setCOpen(false) : escClear() }
   }
+  const reopenSearch = () => { setPq(baseName(sel.name)); setSel(null); setPOpen(true) }
   const onProdKey = (e) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setPOpen(true); setPIdx((i) => Math.min(i + 1, pItems.length - 1)) }
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && sel) { e.preventDefault(); reopenSearch() }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); setPOpen(true); setPIdx((i) => Math.min(i + 1, pItems.length - 1)) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setPIdx((i) => Math.max(i - 1, -1)) }
-    else if (e.key === 'ArrowRight' && pIdx >= 0 && e.currentTarget.selectionStart === pq.length) { e.preventDefault(); pickProduct(pItems[pIdx]) }
+    else if (e.key === 'ArrowRight' && !sel && pIdx >= 0 && e.currentTarget.selectionStart === pq.length) { e.preventDefault(); pickProduct(pItems[pIdx]) }
+    else if (e.key === 'Escape' && sel) { e.preventDefault(); setSel(null); setPq(''); setPOpen(true) }
     else if (e.key === 'Enter') {
       e.preventDefault()
-      if (pIdx >= 0 || pq.trim()) pickProduct(pItems[Math.max(pIdx, 0)])
+      if (sel) focusSoon(sel.isNew ? refPr : refQ, true)
+      else if (pIdx >= 0 || pq.trim()) pickProduct(pItems[Math.max(pIdx, 0)])
       else if (items.length) { setPOpen(false); focusSoon(refR, true) } // empty row + Enter → payment
       else say('err', 'Search a product and press Enter')
     } else if (e.key === 'Escape') { e.preventDefault(); pq ? setPq('') : pOpen ? setPOpen(false) : escClear() }
@@ -551,8 +557,8 @@ export default function BillingPage() {
                   {(mode === 'product' || mode === 'material') && <>
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="relative min-w-[200px] flex-1">
-                      <input ref={refP} value={sel ? baseName(sel.name) : pq} placeholder={mode === 'material' ? 'Type material name or press ↓' : 'Type product name or press ↓'} autoComplete="off" aria-label="Product" readOnly={!!sel}
-                        onChange={(e) => { setPq(e.target.value); setPOpen(true) }} onFocus={() => !sel && setPOpen(true)} onBlur={() => setPOpen(false)} onKeyDown={onProdKey}
+                      <input ref={refP} value={sel ? baseName(sel.name) : pq} placeholder={mode === 'material' ? 'Type material name or press ↓' : 'Type product name or press ↓'} autoComplete="off" aria-label="Product"
+                        onChange={(e) => { if (sel) setSel(null); setPq(e.target.value); setPOpen(true) }} onFocus={(e) => (sel ? e.target.select() : setPOpen(true))} onBlur={() => setPOpen(false)} onKeyDown={onProdKey}
                         className={`${inp} pr-8 ${pOpen ? 'border-orange-400 ring-2 ring-orange-100' : 'border-orange-300'}`} />
                       <ChevronDown size={15} className="pointer-events-none absolute right-3 top-[11px] text-gray-500" />
                       {pOpen && !sel && (
