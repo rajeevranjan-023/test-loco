@@ -60,13 +60,12 @@ export const searchCustomers = asyncHandler(async (req, res) => {
     .sort((a, b) => Number(phoneLike ? b.phone.startsWith(digits) : b.name.toLowerCase().startsWith(lq)) - Number(phoneLike ? a.phone.startsWith(digits) : a.name.toLowerCase().startsWith(lq))
       || (b.usageCount || 0) - (a.usageCount || 0) || +new Date(b.lastBillAt || 0) - +new Date(a.lastBillAt || 0))
     .slice(0, MAX_SUGGESTIONS)
-  const bal = await balancesOf(req, local.map((c) => c._id))
+  const askGlobal = phoneLike && PHONE_RE.test(digits) && !local.some((c) => c.phone === digits)
+  const [bal, g] = await Promise.all([balancesOf(req, local.map((c) => c._id)), askGlobal ? GlobalUser.findOne({ phone: digits }).lean() : null])
   const out = local.map((c) => shape(c, bal))
 
-  if (phoneLike && PHONE_RE.test(digits) && !local.some((c) => c.phone === digits)) {
-    const g = await GlobalUser.findOne({ phone: digits }).lean()
-    if (g) out.push({ source: 'global', globalUserId: g._id, name: mostUsedName(g), phone: g.phone, usageCount: totalUses(g), exact: true, udharDue: 0, credit: 0 })
-  }
+  const gName = g && mostUsedName(g)
+  if (gName) out.push({ source: 'global', globalUserId: g._id, name: gName, phone: g.phone, exact: true })
   res.json(out)
 })
 

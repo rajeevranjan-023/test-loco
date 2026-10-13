@@ -51,6 +51,8 @@ const DEFAULT_CFG = { capabilities: { products: true, partialPayment: true, udha
 
 // Customer search only starts with enough input: name ≥ 2 characters · phone ≥ 3 digits. Below that → no request at all.
 const searchable = (q) => { const t = q.trim(); return /^[\d\s+-]+$/.test(t) ? t.replace(/\D/g, '').length >= 3 : t.length >= 2 }
+const fullPhone = (q) => { const t = q.trim(); if (!/^[\d\s+-]+$/.test(t)) return false; let d = t.replace(/\D/g, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return d.length === 10 }
+const canKey = (it) => !!it && (it.t === 'add' || (it.t === 'c' && it.c.source !== 'global'))
 
 /* ───────── bill preview · share · print ───────── */
 // Every customer-facing output (80mm · A4 · WhatsApp · SMS · Telegram) renders from ONE customer-safe document — see billCore.buildDocument / billOutput.js.
@@ -80,6 +82,8 @@ export default function BillingPage() {
   const [preview, setPreview] = useState(null) // bill preview / share modal
   const lastErr = useRef('')
   const custCache = useRef(new Map()) // typed query → suggestions, so backspacing never re-fetches
+  const enterWait = useRef(null)      // the query an Enter was pressed for while its search was still running (decided when the answer lands)
+  const selecting = useRef(false)     // a global suggestion is being saved to this shop — ignore a second click
   const [products, setProducts] = useState([])
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -139,8 +143,10 @@ export default function BillingPage() {
   useEffect(() => { loadDrafts() }, [loadDrafts])
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), toast.kind === 'ok' ? 6000 : 3500); return () => clearTimeout(t) }, [toast])
 
-  // Customer suggestions. NO request until there is enough input (name ≥ 2 chars · phone ≥ 3 digits);
-  // debounced, stale replies ignored, repeated queries served from a small cache.
+  // Customer suggestions. NO request until there is enough input (name ≥ 2 chars · phone ≥ 3 digits).
+  // ONE request answers everything: the shop's own customers first and — only for a complete number the shop does not have —
+  // the global directory, so a result is never half-ready. A complete number goes out at once, anything else waits a moment so
+  // fast typing sends one request. Replies for older text are ignored; repeated queries are served from the cache.
   useEffect(() => {
     if (customer) return
     const q = cq.trim()
@@ -148,18 +154,44 @@ export default function BillingPage() {
     const hit = custCache.current.get(q)
     if (hit) { setCustList(hit); setCustDone(q); return }
     let live = true
-    const t = setTimeout(() => call('get', `/api/customers/search?q=${encodeURIComponent(q)}`).then((r) => { custCache.current.set(q, r); if (live) { setCustList(r); setCustDone(q) } }).catch(() => {}), 200)
+    const t = setTimeout(() => call('get', `/api/customers/search?q=${encodeURIComponent(q)}`)
+      .then((r) => { custCache.current.set(q, r); if (live) { setCustList(r); setCustDone(q) } })
+      .catch(() => { if (live) { setCustList([]); setCustDone(q) } }), // a failed search must not leave an Enter waiting forever — the seller can still create the customer
+    fullPhone(q) ? 0 : 120)
     return () => { live = false; clearTimeout(t) }
   }, [cq, customer])
   useEffect(() => { setCIdx(cq.trim() ? 0 : -1) }, [cq])
 
+  // Rows: the shop's own customers → (global suggestion, name only) → "Create new". While the answer for the current text is
+  // still on its way: no global row, no "Create new" row, just "Searching…" — so nothing can be picked from a half-finished search.
   const cItems = useMemo(() => {
     const q = cq.trim()
     if (!searchable(q)) return [] // nothing typed (or too short) → no suggestions at all
-    const a = custList.slice(0, 5).map((c) => ({ t: 'c', c }))
-    if (!custList.some((c) => c.name.toLowerCase() === q.toLowerCase() || c.phone === q)) a.push({ t: 'add' })
+    const pending = custDone !== q
+    const own = custList.filter((c) => c.source !== 'global')
+    const a = own.slice(0, 5).map((c) => ({ t: 'c', c }))
+    if (pending) return [...a, { t: 'wait' }]
+    const g = custList.find((c) => c.source === 'global')
+    if (g) a.push({ t: 'c', c: g }) // a matching global user never blocks creating a new customer, so "Create new" stays below it
+    if (!own.some((c) => c.name.toLowerCase() === q.toLowerCase() || c.phone === q)) a.push({ t: 'add' })
     return a
-  }, [custList, cq])
+  }, [custList, cq, custDone])
+  const cAct = canKey(cItems[cIdx]) ? cIdx : cItems.findIndex(canKey) // highlighted row: first keyboard-selectable one unless the seller moved
+  const stepKey = (dir) => { for (let i = cAct + dir; i >= 0 && i < cItems.length; i += dir) if (canKey(cItems[i])) return i; return cAct }
+
+  // An Enter pressed while the search was still running is decided here, once the answer for THAT text has arrived:
+  // the shop's own match → use it · only a global suggestion → do nothing (the seller clicks it, or presses Enter on "Create new") · nothing at all → new-customer flow.
+  useEffect(() => {
+    const w = enterWait.current
+    if (w === null) return
+    if (customer || cq.trim() !== w) { enterWait.current = null; return } // moved on
+    if (custDone !== w) return                                            // still waiting
+    enterWait.current = null
+    const own = cItems.find((x) => x.t === 'c' && x.c.source !== 'global')
+    if (own) return pickCustomer(cItems[cAct]?.t === 'c' ? cItems[cAct] : own)
+    if (cItems.some((x) => x.t === 'c')) return
+    pickCustomer(cItems.find((x) => x.t === 'add'))
+  }, [custDone, cq, customer, cItems, cAct]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pItems = useMemo(() => {
     const q = pq.trim().toLowerCase()
@@ -171,7 +203,7 @@ export default function BillingPage() {
   }, [products, pq, mode])
   useEffect(() => { setPIdx(pq.trim() ? 0 : -1) }, [pq])
   useEffect(() => { listP.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' }) }, [pIdx, pOpen])
-  useEffect(() => { listC.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' }) }, [cIdx, cOpen])
+  useEffect(() => { listC.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' }) }, [cAct, cOpen])
 
   /* ───────── totals ───────── */
   // ONE calculation pipeline shared with the server: line totals → subtotal → discounts → tax → grand total
@@ -222,16 +254,21 @@ export default function BillingPage() {
     focusSoon(refC)
   }, [types, applyDefaultDiscount])
 
+  // Saves the clicked global suggestion to THIS shop through the existing select endpoint (no new global user is ever created).
+  const pickGlobal = (c) => {
+    if (selecting.current) return
+    selecting.current = true
+    call('post', '/api/seller/billing/customers/select', { globalUserId: c.globalUserId, name: c.name, phone: c.phone })
+      .then((saved) => { custCache.current.clear(); setCustomer(saved); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP) })
+      .catch((e) => (e.status === 409 ? setAddOpen({ name: c.name, phone: c.phone, globalUserId: c.globalUserId, notice: e.message }) : say('err', e.message))) // name already used by another of this shop's customers → let the seller change it
+      .finally(() => { selecting.current = false })
+  }
   const pickCustomer = (it) => {
     if (!it) return say('err', tx('Select a customer from the list (↓ then Enter)'))
+    if (it.t === 'wait') return
     if (it.t === 'add') { const q = cq.trim(); return setAddOpen(/^\d+$/.test(q) ? { name: '', phone: q } : { name: q, phone: '' }) }
     const c = it.c
-    if (c.source === 'global') {
-      // exact 10-digit match → let the seller confirm / edit the name first; otherwise save with the most-used name
-      if (c.exact) return setAddOpen({ name: c.name, phone: c.phone, globalUserId: c.globalUserId })
-      return call('post', '/api/seller/billing/customers/select', { globalUserId: c.globalUserId, name: c.name, phone: c.phone })
-        .then((saved) => { setCustomer(saved); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP) }).catch((e) => say('err', e.message))
-    }
+    if (c.source === 'global') return pickGlobal(c)
     setCustomer(c); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP)
   }
   const customerText = customer ? [customer.name, customer.phone, customer.udharDue ? `${tx('Udhar')}: ${rupee(customer.udharDue)}` : customer.credit ? `Advance: ${rupee(customer.credit)}` : ''].filter(Boolean).join('  |  ') : cq
@@ -384,9 +421,15 @@ export default function BillingPage() {
 
   /* ───────── key handlers ───────── */
   const onCustKey = (e) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setCOpen(true); setCIdx((i) => Math.min(i + 1, cItems.length - 1)) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setCIdx((i) => Math.max(i - 1, 0)) }
-    else if (e.key === 'Enter') { e.preventDefault(); customer ? (setCOpen(false), focusSoon(refP)) : pickCustomer(cItems[cIdx]) }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setCOpen(true); setCIdx(stepKey(1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setCIdx(stepKey(-1)) }
+    else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (customer) { setCOpen(false); return focusSoon(refP) }
+      const q = cq.trim()
+      if (searchable(q) && custDone !== q) { enterWait.current = q; return } // the search for this text is still running: never act on the old list or create anything yet
+      pickCustomer(cItems[cAct])
+    }
     else if (e.key === 'Escape') { e.preventDefault(); cOpen ? setCOpen(false) : escClear() }
   }
   const onProdKey = (e) => {
@@ -472,13 +515,13 @@ export default function BillingPage() {
                     <ul ref={listC} className={dd} role="listbox">
                       {custDone === cq.trim() && !custList.length && <li className="px-3 py-1.5 text-[12.5px] text-gray-400">No result found</li>}
                       {cItems.map((it, i) => (
-                        <li key={i} role="option" aria-selected={i === cIdx} data-active={i === cIdx} onMouseDown={(e) => { e.preventDefault(); pickCustomer(it) }} onMouseEnter={() => setCIdx(i)}
-                          className={`flex cursor-pointer items-center gap-3 px-3 py-1.5 text-[13px] ${i === cIdx ? 'bg-[#FFF4E8]' : ''}`}>
-                          {it.t === 'add' ? 
-                          <span className="font-medium text-[#2F6FEB]">+ {tx('Create new customer')}{cq.trim() ? ` “${cq.trim()}”` : ''}</span>
+                        <li key={it.t === 'c' ? it.c.id || `g${it.c.globalUserId}` : it.t} role="option" aria-selected={i === cAct} data-active={i === cAct} onMouseDown={(e) => { e.preventDefault(); pickCustomer(it) }} onMouseEnter={() => canKey(it) && setCIdx(i)}
+                          className={`flex items-center gap-3 px-3 py-1.5 text-[13px] ${it.t === 'wait' ? 'cursor-default text-gray-400' : 'cursor-pointer hover:bg-[#FFF4E8]'} ${i === cAct ? 'bg-[#FFF4E8]' : ''}`}>
+                          {it.t === 'wait' ? <span className="text-[12.5px]">Searching…</span>
+                            : it.t === 'add' ? <span className="font-medium text-[#2F6FEB]">+ {tx('Create new customer')}{cq.trim() ? ` “${cq.trim()}”` : ''}</span>
+                            : it.c.source === 'global' ? <span className="flex-1 font-medium text-[#4F46E5]" title="Already known on Loco — click to use this name (it is not selected automatically)">{it.c.name}</span>
                             : <><span className="flex-1 font-medium">{it.c.name}</span>
                             <span className="text-gray-500">{it.c.phone}</span>
-                            {it.c.source === 'global' && <span className="rounded bg-[#EEF2FF] px-1.5 py-0.5 text-[11px] text-[#4F46E5]" title="Found in the global directory — saved to your shop when you pick it">Global · {it.c.usageCount}× used</span>}
                             {it.c.udharDue > 0 && <span className="rounded bg-[#FFF1DC] px-1.5 py-0.5 text-[11px] text-[#E58A00]">{tx('Udhar')} {rupee(it.c.udharDue)}</span>}
                             {it.c.credit > 0 && <span className="rounded bg-[#E6F0FE] px-1.5 py-0.5 text-[11px] text-[#2F6FEB]">Advance {rupee(it.c.credit)}</span>}</>}
                         </li>))}
@@ -691,7 +734,7 @@ export default function BillingPage() {
                 <button type="button" aria-label="Delete draft" onClick={() => removeDraft(d.id)} className="rounded p-1 text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
               </li>))}</ul>)}
         </Modal>)}
-      {addOpen && <AddCustomer init={addOpen} onClose={() => { setAddOpen(null); focusSoon(refC) }} onDone={(c) => { setAddOpen(null); setCustomer(c); setCq(''); setCOpen(false); focusSoon(refP) }} />}
+      {addOpen && <AddCustomer init={addOpen} onClose={() => { setAddOpen(null); focusSoon(refC) }} onDone={(c) => { custCache.current.clear(); setAddOpen(null); setCustomer(c); setCq(''); setCOpen(false); focusSoon(refP) }} />}
       {detail && (
         <Modal title={detail.id ? `Bill ${detail.id}` : 'Bill details'} onClose={() => setDetail(null)} wide>
           {detail.loading ? <div className="h-32 animate-pulse rounded-xl bg-gray-100" /> : detail.error ? <p className="text-sm text-red-600">{detail.error}</p> : (
@@ -722,9 +765,9 @@ export default function BillingPage() {
 
 function AddCustomer({ init, onClose, onDone }) {
   const { tx } = useBusiness()
-  const [f, setF] = useState({ name: init?.name || '', phone: init?.phone || '' }); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+  const [f, setF] = useState({ name: init?.name || '', phone: init?.phone || '' }); const [err, setErr] = useState(init?.notice || ''); const [busy, setBusy] = useState(false)
   const fromGlobal = !!init?.globalUserId // exact number found in the global directory → confirm / edit the name, then save to this shop
-  const save = async () => { setBusy(true); setErr(''); try { onDone(await call('post', fromGlobal ? '/api/seller/billing/customers/select' : '/api/seller/billing/customers', fromGlobal ? { ...f, globalUserId: init.globalUserId } : f)) } catch (e) { setErr(e.message) } finally { setBusy(false) } }
+  const save = async () => { if (busy) return; setBusy(true); setErr(''); try { onDone(await call('post', fromGlobal ? '/api/seller/billing/customers/select' : '/api/seller/billing/customers', fromGlobal ? { ...f, globalUserId: init.globalUserId } : f)) } catch (e) { setErr(e.message) } finally { setBusy(false) } }
   return (
     <Modal title={tx(fromGlobal ? 'Confirm Customer' : 'Add Customer')} onClose={onClose}>
       <form onSubmit={(e) => { e.preventDefault(); save() }} className="space-y-3">

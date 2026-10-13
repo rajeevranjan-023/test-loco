@@ -14,6 +14,7 @@
     "seed:study": "node seed/seedStudyCenter.js",
     "test:study": "node tests/study.logic.test.js && node tests/study.config.test.js && node tests/study.seed.test.js",
     "test:billing": "node tests/billing.int.test.js && node tests/billing2.int.test.js",
+    "test:customers": "node tests/customerSearch.global.test.js",
     "test:auth": "node tests/auth.int.test.js",
     "e2e:server": "node tests/e2e-harness.js",
     "seed:service": "node seed/seedServiceProvider.js",
