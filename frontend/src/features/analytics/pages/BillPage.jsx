@@ -6,7 +6,7 @@ import { useSeller, call, Modal } from '../kit.jsx'
 import { Av, PayBadge, StatusSelect, inr, time, dateOnly, waLink } from '../orders/shared.jsx'
 import BillActions from '../BillActions.jsx'
 const SECTION = { product: 'PRODUCTS', service: 'SERVICES', material: 'MATERIALS', labour: 'LABOUR', other: 'OTHER CHARGES' }
-const METHOD_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card', advance: 'Advance' }
+const METHOD_LABEL = { cash: 'Cash', upi: 'UPI', card: 'Card', advance: 'From Adv. Bal.' }
 
 const Row = ({ l, v, bold, tone }) => <div className={`flex justify-between gap-4 py-1.5 text-[12.5px] ${bold ? 'border-t border-gray-100 pt-2 text-[14px] font-bold text-gray-900' : 'text-gray-600'}`}><span>{l}</span><span className={`font-medium ${tone || (bold ? '' : 'text-gray-900')}`}>{v}</span></div>
 const Box = ({ title, children, className = '' }) => <section className={`rounded-xl border border-[#E8EEF6] bg-white p-3.5 ${className}`}>{title && <h3 className="mb-2 text-[13px] font-semibold text-gray-900">{title}</h3>}{children}</section>

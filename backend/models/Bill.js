@@ -42,6 +42,7 @@ const billSchema = new mongoose.Schema(
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null, index: true },
     status: { type: String, enum: ['paid', 'udhar', 'advance'], default: 'paid' }, // settlement: paid · udhar (owes) · advance (customer paid extra)
     balanceAfter: { type: Number, default: null }, // customer's account balance right after this bill (+ owes · − advance)
+    balanceBefore: { type: Number, default: null }, // …and right BEFORE it — a frozen snapshot so the printed "previous udhar" never changes (null on older bills; read-time fallback in billingController)
     cancelledAt: { type: Date, default: null },
     creditUsed: { type: Number, default: 0, min: 0 },    // customer's Advance Balance auto-deducted on this bill
     advanceAdded: { type: Number, default: 0, min: 0 },  // extra paid on this bill that went into Advance Balance

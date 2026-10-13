@@ -128,6 +128,27 @@ export function paymentStatusOf(b) {
   if (!(b.paidAmount > 0.005)) return b.status === 'udhar' ? 'Udhar' : 'Unpaid'
   return 'Partial'
 }
+// ── Udhar account summary (customer-facing) ──
+// Built ONLY from the balances snapshotted on the bill (balanceBefore / balanceAfter: + the customer owes · − the shop holds an Advance) and the
+// payment fields already stored on it — never from the live ledger — so reprinting an old bill always reads exactly as it did the day it was made.
+// Returns null when the bill has no customer account, or nothing is owed / held before or after (a plain paid bill stays unchanged).
+//   previousDue + billAmount − advanceUsed − received = remainingDue   (when the unpaid part of the bill was put on udhar)
+export function accountSummary(bill) {
+  if (bill.balanceBefore == null || bill.balanceAfter == null) return null
+  const before = Number(bill.balanceBefore), after = Number(bill.balanceAfter)
+  if (!Number.isFinite(before) || !Number.isFinite(after)) return null
+  const previousDue = Math.max(r2(before), 0), previousAdvance = Math.max(r2(-before), 0)
+  const remainingDue = Math.max(r2(after), 0), remainingAdvance = Math.max(r2(-after), 0)
+  if (!(previousDue > 0 || previousAdvance > 0 || remainingDue > 0 || remainingAdvance > 0)) return null
+  const net = bill.receivedAmount != null ? r2(Number(bill.receivedAmount) - Number(bill.returnedAmount || 0)) : r2((bill.paidAmount || 0) - (bill.creditUsed || 0))
+  // Split what was handed over: the part that paid THIS bill · the part collected against the PREVIOUS udhar · the part kept as Advance Balance.
+  // Derived only from fields stored on the bill, so old bills keep reading exactly as before (collectedOld = 0 unless money really went to old udhar).
+  const billPaid = Math.max(r2((bill.paidAmount || 0) - (bill.creditUsed || 0)), 0)
+  const advanceKept = r2(bill.advanceAdded || 0)
+  const collectedOld = Math.max(r2(Math.max(net, 0) - billPaid - advanceKept), 0)
+  return { previousDue, previousAdvance, billAmount: bill.totalAmount, advanceUsed: r2(bill.creditUsed || 0), received: Math.max(net, 0), billPaid, collectedOld, advanceKept, returned: r2(bill.returnedAmount || 0), remainingDue, remainingAdvance }
+}
+
 export function buildDocument({ business = {}, bill, payments = [], terms = '', partyLabel = 'Customer', partyIdLabel = '' }) {
   const sections = SECTIONS.map(([key, title]) => ({
     key, title,
@@ -154,5 +175,6 @@ export function buildDocument({ business = {}, bill, payments = [], terms = '', 
     },
     payment: { method: methods.length ? methods.join(' + ') : status === 'Udhar' || status === 'Unpaid' ? 'Udhar' : METHOD[bill.paymentMethod] || 'Cash', status, payments: pays },
     terms: String(terms || ''),
+    account: (() => { const a = accountSummary(bill); return a ? { ...a, term: partyLabel === 'Customer' ? 'Udhar' : 'Dues' } : null })(), // "Udhar" is a shop word
   }
 }

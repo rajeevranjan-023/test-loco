@@ -30,7 +30,7 @@ import Settings from './pages/Settings.jsx'
 
 function App() {
   return (
-    <div className="app-wrapper">
+    <div className="app-wrapper"> 
       <ConnectionBanner />
       <SessionBoundary>
       <RouteErrorBoundary>

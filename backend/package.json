@@ -9,7 +9,7 @@
     "start": "node server.js",
     "seed": "node seed/seed.js",
     "seed:demo": "node seed/seedDemo.js",
-    "test:unit": "node tests/billId.test.js && node tests/username.test.js && node tests/stock.test.js && node tests/billing.test.js && node tests/billing.output.test.js && node tests/cors.test.js && node tests/billing.series.test.js",
+    "test:unit": "node tests/billId.test.js && node tests/username.test.js && node tests/stock.test.js && node tests/billing.test.js && node tests/billing.output.test.js && node tests/cors.test.js && node tests/billing.series.test.js && node tests/billing.account.test.js && node tests/billing.settlement.test.js",
     "seed:home": "node seed/seedHome.js",
     "seed:study": "node seed/seedStudyCenter.js",
     "test:study": "node tests/study.logic.test.js && node tests/study.config.test.js && node tests/study.seed.test.js",

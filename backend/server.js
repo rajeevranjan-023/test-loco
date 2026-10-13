@@ -60,7 +60,7 @@ app.use('/api', requireDatabase)   // database down → immediate 503 instead of
 import listingRoutes from './routes/listingRoutes.js'
 app.use('/api', listingRoutes)
 
-import homeRoutes from './routes/homeRoutes.js'
+import homeRoutes from './routes/homeRoutes.js' 
 app.use('/api', homeRoutes)
 
 import searchRoutes from './routes/searchRoutes.js'

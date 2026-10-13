@@ -60,3 +60,8 @@ export function printHtml(title, body) {
   w.document.close(); w.focus(); setTimeout(() => w.print(), 250)
 }
 export const payText = (p) => (p.kind === 'draft' ? 'Draft' : p.kind === 'paid' ? `Paid (${p.method})` : p.kind === 'advance' ? 'Advance Used' : `${p.kind === 'udhar' ? 'Udhar' : 'Pending'} ${inr(p.amount)}`)
+
+// Pagination: [1, 2, '…', 9]. Page numbers are unique, but an ellipsis used its INDEX as key — at index 2 that is the same key as page "2"
+// (React: "Encountered two children with the same key, '2'"). Numbers keep `page-N`, each ellipsis gets `gap-<position>`: always distinct.
+export const pageKey = (p, i) => (p === '…' ? `gap-${i}` : `page-${p}`)
+export const pageList = (n, c) => { const a = []; for (let i = 1; i <= n; i++) if (i === 1 || i === n || Math.abs(i - c) <= 1) a.push(i); return a.reduce((o, i, k) => (k && i - a[k - 1] > 1 ? [...o, '…', i] : [...o, i]), []) }

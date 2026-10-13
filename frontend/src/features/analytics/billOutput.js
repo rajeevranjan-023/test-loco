@@ -10,6 +10,28 @@ const qtyText = (i) => `${i.qty}${i.unit ? ' ' + i.unit : ''}`
 const ICON = { product: '📦', service: '🔧', material: '🧰', labour: '👷', other: '➕' }
 const sectionTotal = (s) => s.items.reduce((a, i) => a + i.total, 0)
 const titleCase = (t) => t.charAt(0) + t.slice(1).toLowerCase()
+// Part of a bill paid out of the customer's Advance Balance is labelled "From Adv. Bal." on every output (billCore names it 'Advance').
+// A bill paid ONLY from the advance must not read "Payment: Cash".
+const ADV = 'From Adv. Bal.'
+const payLabel = (m) => (m === 'Advance' ? ADV : m)
+const payText = (d) => { const p = d.payment.payments || []; return p.length && p.every((x) => x.method === 'Advance') ? ADV : d.payment.method }
+// Udhar account block (previous dues · this bill · paid now · remaining) — present only when the document carries one. Same rows in every format.
+const acct = (d) => {
+  const a = d.account; if (!a) return null
+  const t = a.term || 'Udhar'
+  return { title: `${t.toUpperCase()} ACCOUNT`, rows: [
+    ...(a.previousDue > 0 ? [[`Previous ${t}`, rs(a.previousDue)]] : a.previousAdvance > 0 ? [['Previous Advance', rs(a.previousAdvance)]] : []),
+    ['This bill', rs(a.billAmount)],
+    ...(a.advanceUsed > 0 ? [[`Advance used (${ADV})`, `-${rs(a.advanceUsed)}`]] : []),
+    // money collected against the PREVIOUS udhar is shown on its own line — it is never presented as a payment of this bill
+    ...(a.collectedOld > 0 ? [['Paid for this bill', rs(a.billPaid)], [`Old ${t} collected`, rs(a.collectedOld)]] : [['Paid now', rs(a.received)]]),
+    ...(a.advanceKept > 0 ? [['Kept as Advance', rs(a.advanceKept)]] : []),
+    ...(a.returned > 0 ? [['Returned', rs(a.returned)]] : []),
+    ...(a.remainingDue > 0 || !(a.remainingAdvance > 0) ? [[`Remaining ${t}`, rs(a.remainingDue), true]] : []),
+    ...(a.remainingAdvance > 0 ? [['Advance balance', rs(a.remainingAdvance), a.remainingDue <= 0]] : []),
+  ] }
+}
+export const accountBlock = acct // the same rows the on-screen preview shows
 const tail = (d) => ({ rows: [['Subtotal', rs(d.totals.subtotal)], ...(d.totals.discount > 0 ? [['Discount', `-${rs(d.totals.discount)}`]] : []), ...(d.totals.tax ? [[`${d.totals.tax.name}${d.totals.tax.rate ? ` (${d.totals.tax.rate}%)` : ''}`, rs(d.totals.tax.amount)]] : [])] })
 
 /* ───────────── 80mm thermal receipt ───────────── */
@@ -31,7 +53,8 @@ ${row('Bill:', `#${esc(String(d.billNo).replace(/^#/, ''))}`)}${row('Date:', esc
 ${body}${hr}
 ${tail(d).rows.map(([l, v]) => row(l, v)).join('')}${hr}${row('TOTAL', rs(d.totals.total), 't')}${hr}
 ${row('Paid', rs(d.totals.paid))}${d.totals.due > 0 ? row('Due', rs(d.totals.due), 'b') : ''}${hr}
-<div>Payment: ${esc(d.payment.method)}</div><div>Status: ${esc(d.payment.status)}</div>${d.payment.payments.length > 1 ? d.payment.payments.map((p) => row(`  ${esc(p.method)}`, rs(p.amount))).join('') : ''}
+<div>Payment: ${esc(payText(d))}</div><div>Status: ${esc(d.payment.status)}</div>${d.payment.payments.length > 1 ? d.payment.payments.map((p) => row(`  ${esc(payLabel(p.method))}`, rs(p.amount))).join('') : ''}
+${(() => { const a = acct(d); return a ? `${hr}<div class="h">${esc(a.title)}</div>${a.rows.map(([l, v, b]) => row(esc(l), v, b ? 'b' : '')).join('')}` : '' })()}
 ${d.terms ? `${hr}<div class="d">${esc(d.terms)}</div>` : ''}<div class="c" style="margin-top:3mm">Thank you!</div></body></html>`
 }
 
@@ -57,7 +80,8 @@ td{text-align:right;padding:7px 8px;border-bottom:1px solid #eef0f3;vertical-ali
 <div class="meta"><div class="box"><b>BILLED TO</b>${esc(d.customer.name)}${d.party?.id ? `<div class="muted">${esc(d.party.idLabel || 'ID')}: ${esc(d.party.id)}</div>` : ''}${d.customer.phone ? `<div class="muted">${esc(d.customer.phone)}</div>` : ''}</div>${d.context.length ? `<div class="box"><b>DETAILS</b>${d.context.map((c) => `<div>${esc(c.label)}: <b style="display:inline;font-size:13px;color:#111;letter-spacing:0">${esc(c.value)}</b></div>`).join('')}</div>` : ''}</div>
 ${d.sections.map(sec).join('')}
 <table class="sum">${tail(d).rows.map(([l, v]) => sum(esc(l), esc(v))).join('')}${sum('Grand Total', rs(d.totals.total), 'tot')}${sum('Amount Paid', rs(d.totals.paid))}${d.totals.due > 0 ? sum('Outstanding', rs(d.totals.due), 'due') : ''}</table>
-<div class="pay"><div>Payment: <b>${esc(d.payment.method)}</b>${d.payment.payments.length > 1 ? ` <span class="muted">(${d.payment.payments.map((p) => `${esc(p.method)} ${rs(p.amount)}`).join(', ')})</span>` : ''}</div><div>Status: <span class="pill ${d.payment.status === 'Paid' ? '' : d.payment.status === 'Partial' ? 'warn' : 'bad'}">${esc(d.payment.status)}</span></div></div>
+<div class="pay"><div>Payment: <b>${esc(payText(d))}</b>${d.payment.payments.length > 1 ? ` <span class="muted">(${d.payment.payments.map((p) => `${esc(payLabel(p.method))} ${rs(p.amount)}`).join(', ')})</span>` : ''}</div><div>Status: <span class="pill ${d.payment.status === 'Paid' ? '' : d.payment.status === 'Partial' ? 'warn' : 'bad'}">${esc(d.payment.status)}</span></div></div>
+${(() => { const a = acct(d); return a ? `<table class="sum acct"><tr><td colspan="2" style="font-size:11px;letter-spacing:.08em;color:#2f6feb;font-weight:700">${esc(a.title)}</td></tr>${a.rows.map(([l, v, b]) => sum(esc(l), esc(v), b ? 'tot' : '')).join('')}</table>` : '' })()}
 <div class="foot">${d.terms ? `<div style="margin-bottom:6px">${esc(d.terms)}</div>` : ''}Thank you for choosing ${esc(d.business.name)}.</div></body></html>`
 }
 
@@ -76,7 +100,9 @@ export function whatsappText(d) {
   }
   L.push(BAR, ...tail(d).rows.map(([l, v]) => `${l}: ${v}`), `Total: ${rs(d.totals.total)}`, '', `Paid: ${rs(d.totals.paid)}`)
   if (d.totals.due > 0) L.push(`Due: ${rs(d.totals.due)}`)
-  L.push('', `Payment: ${d.payment.method}`, `Status: ${d.payment.status}`, '', `Thank you for choosing ${d.business.name}.`)
+  L.push('', `Payment: ${payText(d)}`, `Status: ${d.payment.status}`)
+  { const a = acct(d); if (a) L.push('', a.title, ...a.rows.map(([l, v]) => `${l}: ${v}`)) }
+  L.push('', `Thank you for choosing ${d.business.name}.`)
   if (d.terms) L.push('', d.terms)
   return L.join('\n')
 }
@@ -88,7 +114,8 @@ export function smsText(d) {
   for (const s of d.sections) L.push(`${titleCase(s.title)}: ${rs(sectionTotal(s))}`)
   L.push('', ...tail(d).rows.map(([l, v]) => `${l}: ${v.replace('-', '')}`), `Total: ${rs(d.totals.total)}`, `Paid: ${rs(d.totals.paid)}`)
   if (d.totals.due > 0) L.push(`Due: ${rs(d.totals.due)}`)
-  L.push('', `Payment: ${d.payment.method}`, `Status: ${d.payment.status}`)
+  L.push('', `Payment: ${payText(d)}`, `Status: ${d.payment.status}`)
+  { const a = acct(d); if (a) L.push('', ...a.rows.map(([l, v]) => `${l}: ${v.replace('-', '')}`)) }
   return L.join('\n')
 }
 
@@ -102,6 +129,10 @@ export function shareLinks(d, ios = false) {
     Telegram: `https://t.me/share/url?url=%20&text=${enc(telegramText(d))}`,
   }
 }
+
+/* ───────────── on-screen preview ───────────── */
+// "View Only": the very same 80mm / A4 markup, with printing switched off inside it (the viewer also sandboxes the frame and hides the page when the browser prints).
+export const viewOnlyHtml = (html) => html.replace('</head>', '<style>@media print{html,body{display:none!important}}</style></head>')
 
 /* ───────────── printing (browser only) ───────────── */
 // hidden iframe — no pop-up window for the browser to block

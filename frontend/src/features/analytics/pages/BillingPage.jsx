@@ -7,7 +7,8 @@ import { useCustomerPanel, CustomerLink } from '../CustomerPanel.jsx'
 import { useBusiness } from '../../../context/BusinessContext.jsx'
 import StudyBillRow, { STUDY_TYPES, useBillingCatalog } from '../../study/StudyBillRow.jsx'
 import BillingOptions from '../BillingOptions.jsx'
-import BillActions from '../BillActions.jsx'
+import BillActions, { ShareMenu } from '../BillActions.jsx'
+import { accountBlock } from '../billOutput.js'
 import { computeBill, buildDocument } from '../billCore.js'
 
 /* ───────── helpers ───────── */
@@ -32,6 +33,7 @@ const payBadge = { Cash: 'bg-[#E3F7EC] text-[#12A05C]', UPI: 'bg-[#E6F0FE] text-
 const statusBadge = { Pending: 'bg-[#FFF1DC] text-[#E58A00]', Partial: 'bg-[#FFF1DC] text-[#E58A00]', Cleared: 'bg-[#E3F7EC] text-[#12A05C]', Advance: 'bg-[#E6F0FE] text-[#2F6FEB]' } // 🟠 Pending · 🟢 Cleared · 🔵 Advance
 const StatusPill = ({ s }) => <span className={`inline-block min-w-[58px] rounded-md px-2 py-0.5 text-center text-[12px] font-medium ${statusBadge[s] || statusBadge.Cleared}`}>{s}</span>
 const up = (n, step) => Math.ceil(n / step) * step
+const ADV_LABEL = 'From Adv. Bal.' // payment-method label for the part of a bill paid out of the customer's Advance Balance
 // ── Universal billing: line types + derived transaction type (same rule as the server) ──
 const TYPE_LABEL = { product: 'Product', service: 'Service', material: 'Material', labour: 'Labour', other: 'Other Charge' }
 const ADD_LABEL = { product: 'Add Product', service: 'Add Service', material: 'Add Material', labour: 'Add Labour', other: 'Other Charge' }
@@ -43,6 +45,8 @@ const txnOf = (items) => {
   return k.size > 1 ? 'mixed' : k.size === 1 ? [...k][0] : 'service'
 }
 const qtyText = (it) => { const t = typeOfItem(it); return t === 'product' || t === 'material' ? fmtQ({ priceUnit: it.kg ? 'kg' : 'unit' }, it.qty) : t === 'other' || it.pricing === 'fixed' ? '1' : `${it.qty}${it.unit ? ' ' + it.unit : ''}` }
+// The shop's default bill discount (Billing options) — only when Discount itself is enabled. It PRE-FILLS the bill's single discount field; it is never a second discount.
+const defaultDiscountOf = (c) => { const k = c?.capabilities; return k?.discount && k.defaultDiscountEnabled && Number(k.defaultDiscountValue) > 0 ? { type: k.defaultDiscountType === 'percent' ? 'percent' : 'fixed', value: String(k.defaultDiscountValue) } : null }
 const DEFAULT_CFG = { capabilities: { products: true, partialPayment: true, udhar: true, context: [] }, lineTypes: [{ type: 'product', label: 'Product' }] }
 
 // Customer search only starts with enough input: name ≥ 2 characters · phone ≥ 3 digits. Below that → no request at all.
@@ -89,6 +93,9 @@ export default function BillingPage() {
   const [discount, setDiscount] = useState(''); const [ctxVals, setCtxVals] = useState({})
   const chargeFocus = useRef(null)
   const [discountType, setDiscountType] = useState('fixed')           // bill discount: ₹ or %
+  const [discFromDefault, setDiscFromDefault] = useState(false)       // the field currently holds the shop's default discount (not yet edited)
+  const discTouched = useRef(false); const cfgRef = useRef(DEFAULT_CFG); cfgRef.current = cfg // touched = the seller (or a resumed draft) set the discount, so the default must not overwrite it
+  const applyDefaultDiscount = useCallback((c) => { if (discTouched.current) return; const d = defaultDiscountOf(c); setDiscount(d ? d.value : ''); setDiscountType(d ? d.type : 'fixed'); setDiscFromDefault(!!d) }, [])
   const [splitOn, setSplitOn] = useState(false); const [splitAmts, setSplitAmts] = useState({ cash: '', upi: '', card: '' })
   const [editKey, setEditKey] = useState(null); const [mCharge, setMCharge] = useState('charged')
 
@@ -99,6 +106,8 @@ export default function BillingPage() {
   const [price, setPrice] = useState(''); const [sel, setSel] = useState(null); const [pq, setPq] = useState(''); const [pOpen, setPOpen] = useState(false); const [pIdx, setPIdx] = useState(-1); const [qty, setQty] = useState('1')
   const [items, setItems] = useState([])
   // payment
+  const [compFor, setCompFor] = useState(null) // Return Amount → Compensate: customer id whose change is being used to pay their old udhar (explicit seller action only; never persisted by itself)
+  const [advFor, setAdvFor] = useState(null); const [oldPay, setOldPay] = useState(null) // 4th quick button: advFor = customer id whose Advance Balance is applied to this bill · oldPay = { id, amt } collected for that customer's OLD udhar (both keyed by customer, so they can never leak to another customer)
   const [method, setMethod] = useState('Cash'); const [recv, setRecv] = useState(null); const [retMode, setRetMode] = useState('auto'); const [retCustom, setRetCustom] = useState(''); const [notes, setNotes] = useState('')
 
   const refC = useRef(), refP = useRef(), refPr = useRef(), refQ = useRef(), refR = useRef(), refN = useRef(), listP = useRef(), listC = useRef(), escAt = useRef(0)
@@ -107,7 +116,7 @@ export default function BillingPage() {
   const loadProducts = useCallback(() => call('get', '/api/seller/billing/products').then(setProducts).catch(() => {}), [])
   useEffect(() => { loadProducts(); focusSoon(refC) }, [loadProducts])
   const loadServices = useCallback(() => call('get', '/api/seller/billing/services').then(setServices).catch(() => {}), [])
-  useEffect(() => { call('get', '/api/seller/billing/config').then((c) => { setCfg(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0].type)); if (c.capabilities.services || c.capabilities.labour) loadServices() }).catch(() => {}) }, [loadServices])
+  useEffect(() => { call('get', '/api/seller/billing/config').then((c) => { setCfg(c); applyDefaultDiscount(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0].type)); if (c.capabilities.services || c.capabilities.labour) loadServices() }).catch(() => {}) }, [loadServices, applyDefaultDiscount])
   // opened from a member's page: /billing?member=<id>[&renew=1] → member pre-selected, and (renew) the next membership period pre-filled
   const preset = useRef(false)
   useEffect(() => {
@@ -172,24 +181,46 @@ export default function BillingPage() {
   const splitSum = r2(splitList.reduce((a, x) => a + x.amount, 0))
   const txn = txnOf(items)
   const METHODS_ON = METHODS.filter((m) => m[0] !== 'Udhar' || caps.udhar !== false)
-  // the customer's Advance Balance (if any) is auto-deducted first; payment is then compared with what is still due
-  const creditUsed = customer ? Math.min(customer.credit || 0, total) : 0
+  // The customer's account is ONE signed balance (+ owes · − Advance), so udhar and advance never both exist. The 4th quick button follows it:
+  //   owes udhar → "+₹udhar" collects the OLD udhar here · holds Advance → "−₹advance" pays this bill from the Advance Balance (never more than the bill).
+  const udharPend = customer?.id && customer.udharDue > 0 ? r2(customer.udharDue) : 0
+  const advCap = customer?.id && !udharPend ? r2(Math.min(Math.max(customer.credit || 0, 0), total)) : 0
+  const advOn = advCap > 0 && advFor === customer.id
+  // Advance is applied ONLY when the seller taps "−₹…" (it used to be deducted silently) — one source, so it can never be deducted twice.
+  const creditUsed = advOn ? advCap : 0
   const dueNow = r2(total - creditUsed)
   const received = splitOn ? splitSum : recv === null ? (method === 'Udhar' ? 0 : dueNow) : Number(recv) || 0
-  const change = Math.max(r2(received - dueNow), 0), balance = Math.max(r2(dueNow - received), 0)
+  // Money collected for the OLD udhar sits inside Amount Received but is NOT a payment of this bill: bill part = received − old-udhar part.
+  const oldAsked = oldPay && customer?.id && oldPay.id === customer.id ? oldPay.amt : 0
+  const oldBtn = udharPend && !splitOn ? r2(Math.min(oldAsked, received, udharPend)) : 0 // what the 4th button added: collected against the OLD udhar, never counted as payment of this bill
+  // Compensate (Return Amount section): only when the seller taps it, the change that would be handed back is used to pay the customer's old udhar instead.
+  // Anything beyond the bill + old udhar is still "change" — returned, kept as Advance, or custom — exactly like the normal flow.
+  const compOn = udharPend > 0 && !!customer?.id && compFor === customer.id
+  const surplus = Math.max(r2(received - dueNow), 0)
+  const oldSettle = compOn ? r2(Math.min(Math.max(surplus, oldBtn), udharPend)) : oldBtn
+  const billRecv = r2(received - oldSettle)
+  const change = Math.max(r2(billRecv - dueNow), 0), balance = Math.max(r2(dueNow - billRecv), 0)
+  const plainChange = Math.max(r2(received - oldBtn - dueNow), 0) // the normal (uncompensated) Return Amount
   useEffect(() => { setRetMode('auto') }, [change])
+  useEffect(() => { setCompFor(null) }, [customer?.id]) // a different customer never inherits compensation
   const returned = retMode === 'auto' ? change : retMode === 'custom' ? Number(retCustom) || 0 : retMode
   const keptCredit = change > 0 ? Math.max(r2(change - returned), 0) : 0
   const recvChips = [...new Set([dueNow, up(dueNow, 50), up(dueNow, 100), 500, 1000, 2000].filter((v) => v >= dueNow && v > 0))].slice(0, 3)
   const retChips = change > 0 ? [change, 0] : [] // return it all, or keep it as customer credit (0 returned)
+  // The customer's account before / after THIS bill — the same arithmetic the server's ledger does (advance used + unpaid added to udhar − extra paid), so the preview matches the saved bill.
+  const acctBefore = customer?.id ? (customer.udharDue > 0 ? customer.udharDue : -(customer.credit || 0)) : null
+  const netPaid = r2(received - returned), billNet = r2(billRecv - returned), unpaidNow = r2(dueNow - Math.min(billNet, dueNow)), extraNow = r2(Math.max(billNet - dueNow, 0))
+  const acctAfter = acctBefore == null ? null : r2(acctBefore + creditUsed + unpaidNow - extraNow - oldSettle)
+  // how much of the money paid beyond this bill ends up as NEW Advance Balance (the server pays older udhar first, only the rest is advance)
+  const advAddNow = acctBefore == null ? 0 : r2(Math.max((extraNow + oldSettle) - Math.min(extraNow + oldSettle, Math.max(r2(acctBefore + creditUsed + unpaidNow), 0)), 0))
 
   /* ───────── actions ───────── */
   const say = (kind, text, extra) => setToast({ kind, text, ...extra })
   const resetAll = useCallback((keepToast) => {
-    setCustomer(null); setCq(''); setSel(null); setPq(''); setQty('1'); setPrice(''); setItems([]); setMethod('Cash'); setRecv(null); setRetMode('auto'); setRetCustom(''); setNotes(''); setDiscount(''); setDiscountType('fixed'); setSplitOn(false); setSplitAmts({ cash: '', upi: '', card: '' }); setEditKey(null); setMCharge('charged'); setCtxVals({}); setMode(types[0] || 'product'); setCOpen(true); setPOpen(false); setDraftId(null); custCache.current.clear()
+    setCustomer(null); setCq(''); setSel(null); setPq(''); setQty('1'); setPrice(''); setItems([]); setMethod('Cash'); setRecv(null); setAdvFor(null); setOldPay(null); setCompFor(null); setRetMode('auto'); setRetCustom(''); setNotes(''); discTouched.current = false; applyDefaultDiscount(cfgRef.current); setSplitOn(false); setSplitAmts({ cash: '', upi: '', card: '' }); setEditKey(null); setMCharge('charged'); setCtxVals({}); setMode(types[0] || 'product'); setCOpen(true); setPOpen(false); setDraftId(null); custCache.current.clear()
     if (!keepToast) setToast(null)
     focusSoon(refC)
-  }, [types])
+  }, [types, applyDefaultDiscount])
 
   const pickCustomer = (it) => {
     if (!it) return say('err', tx('Select a customer from the list (↓ then Enter)'))
@@ -238,6 +269,24 @@ export default function BillingPage() {
   }
   const cycleMethod = (dir = 1) => setMethod((m) => METHODS_ON[(METHODS_ON.findIndex((x) => x[0] === m) + dir + METHODS_ON.length) % METHODS_ON.length][0])
 
+  // 4th quick button — customer's NET balance is udhar: tapping ADDS that amount to whatever Amount Received already holds (it is never replaced) and marks it as
+  // collected against the OLD udhar, not as payment of this bill. Tapping again takes exactly that amount back out.
+  const toggleOldUdhar = () => {
+    if (!udharPend) return
+    if (oldBtn > 0 || oldAsked > 0) { setRecv(String(r2(Math.max(received - oldAsked, 0)))); setOldPay(null) }
+    else { if (method === 'Udhar') setMethod('Cash'); setOldPay({ id: customer.id, amt: udharPend }); setRecv(String(r2(received + udharPend))) }
+    focusSoon(refR, true)
+  }
+  // 4th quick button — customer holds Advance: pay (part of) this bill from it. Amount Received becomes exactly what is STILL due after the advance
+  // (whatever was typed before, or a bill left on Udhar, is replaced) so nothing is counted twice; tap again to take the advance back off.
+  const toggleAdvance = () => {
+    if (!advCap) return
+    setOldPay(null)
+    if (advOn) { setAdvFor(null); setRecv(null) }
+    else { if (method === 'Udhar') setMethod('Cash'); setAdvFor(customer.id); setRecv(String(r2(Math.max(total - advCap, 0)))) }
+    focusSoon(refR, true)
+  }
+
   const generate = useCallback(async () => {
     if (busy) return
     if (!items.length) { say('err', multi ? 'Add at least one item' : 'Add at least one product'); focusSoon(refP); return }
@@ -245,7 +294,7 @@ export default function BillingPage() {
     setBusy(true)
     try {
       const res = await call('post', '/api/seller/sales', {
-        channel: 'offline', customerName: customer?.name || '', customerPhone: customer?.phone || '', paymentMode: 'custom', amountPaid: Math.min(received, dueNow), addRemainingToUdhar: balance > 0,
+        channel: 'offline', customerName: customer?.name || '', customerPhone: customer?.phone || '', paymentMode: 'custom', amountPaid: Math.min(billRecv, dueNow), addRemainingToUdhar: balance > 0, advanceToUse: creditUsed, oldUdharPaid: oldSettle,
         paymentMethod: METHODS.find((m) => m[0] === method)[2], receivedAmount: received, returnedAmount: returned, notes, draftId,
         discount: caps.discount ? { type: discountType, value: Number(discount) || 0 } : 0, context: ctxVals,
         ...(splitOn && splitList.length ? { payments: splitList } : {}),
@@ -266,7 +315,7 @@ export default function BillingPage() {
       recent.reload(); loadProducts(); loadServices(); reloadStudyCat(); if (draftId) loadDrafts()
       return res
     } catch (e) { lastErr.current = e.message || 'Could not save the bill'; say('err', lastErr.current) } finally { setBusy(false) }
-  }, [busy, items, balance, customer, received, total, disc, discount, discountType, splitOn, splitList, caps, ctxVals, multi, method, returned, notes, draftId, resetAll, recent, loadProducts, loadServices, loadDrafts])
+  }, [busy, items, balance, customer, received, billRecv, creditUsed, oldSettle, total, disc, discount, discountType, splitOn, splitList, caps, ctxVals, multi, method, returned, notes, draftId, resetAll, recent, loadProducts, loadServices, loadDrafts])
 
   /* ───────── drafts ───────── */
   const saveDraft = async () => {
@@ -282,7 +331,7 @@ export default function BillingPage() {
     try {
       const d = await call('get', `/api/seller/billing/drafts/${id}`), st = d.state || {}
       setCustomer(d.customer || null); setCq(''); setCOpen(false); setSel(null); setPq(''); setQty('1'); setPrice('')
-      setItems(st.items || []); setDiscount(st.discount ?? ''); setDiscountType(st.discountType || 'fixed'); setSplitOn(!!st.split); setSplitAmts(st.split || { cash: '', upi: '', card: '' }); setEditKey(null); setCtxVals(st.context || {}); if (st.mode && types.includes(st.mode)) setMode(st.mode); setMethod(st.method || 'Cash'); setRecv(st.recv ?? null); setRetMode(st.retMode ?? 'auto'); setRetCustom(st.retCustom || ''); setNotes(st.notes || '')
+      setItems(st.items || []); discTouched.current = true; setDiscFromDefault(false); setDiscount(st.discount ?? ''); setDiscountType(st.discountType || 'fixed'); setSplitOn(!!st.split); setSplitAmts(st.split || { cash: '', upi: '', card: '' }); setEditKey(null); setCtxVals(st.context || {}); if (st.mode && types.includes(st.mode)) setMode(st.mode); setMethod(st.method || 'Cash'); setRecv(st.recv ?? null); setCompFor(null); setRetMode(st.retMode ?? 'auto'); setRetCustom(st.retCustom || ''); setNotes(st.notes || '')
       setDraftId(d.id); setDraftsOpen(false); setPOpen(true); focusSoon(refP)
     } catch (e) { say('err', e.message || 'Could not open the draft') }
   }, [types])
@@ -298,7 +347,7 @@ export default function BillingPage() {
   // preview of the bill being typed (not saved yet) — Save in the modal creates it
   const liveDoc = () => {
     if (!items.length) { focusSoon(refP); throw new Error(multi ? 'Add at least one item' : 'Add at least one product') }
-    const pays = splitOn ? splitList : method === 'Udhar' ? [] : [{ method: METHODS.find((m) => m[0] === method)[2], amount: Math.min(received, dueNow) }]
+    const pays = splitOn ? splitList : method === 'Udhar' ? [] : [{ method: METHODS.find((m) => m[0] === method)[2], amount: Math.min(billRecv, dueNow) }]
     const doc = buildDocument({
       business: cfg.business || { name: ctx.summary?.shop?.name || '' },
       bill: {
@@ -306,7 +355,8 @@ export default function BillingPage() {
         context: Object.entries(ctxVals).filter(([, v]) => v).map(([k, v]) => ({ label: caps.context.find((f) => f.key === k)?.label || k, value: v })),
         items: items.map((i, k) => ({ type: typeOfItem(i), name: i.name + (i.size ? ` (${i.size})` : ''), description: i.description || '', qty: i.qty, unit: typeOfItem(i) === 'product' || typeOfItem(i) === 'material' ? (i.kg ? 'kg' : '') : i.unit || '', rate: i.price, discount: calc.lines[k].discount, total: calc.lines[k].total, charge: i.charge || 'charged' })),
         subtotal, discount: disc, taxName: caps.taxName, taxRate: caps.taxRate, taxAmount, totalAmount: total,
-        paidAmount: r2(creditUsed + Math.min(received, dueNow)), unpaidAmount: balance, status: balance > 0 ? 'udhar' : 'paid', paymentMethod: METHODS.find((m) => m[0] === method)[2], transactionType: txn,
+        paidAmount: r2(creditUsed + Math.min(billRecv, dueNow)), unpaidAmount: balance, status: balance > 0 ? 'udhar' : 'paid', paymentMethod: METHODS.find((m) => m[0] === method)[2], transactionType: txn,
+        balanceBefore: acctBefore, balanceAfter: acctAfter, creditUsed, advanceAdded: advAddNow, receivedAmount: received, returnedAmount: returned, // Udhar account block (null balances = walk-in → no block)
       },
       payments: [...pays, ...(creditUsed > 0 ? [{ method: 'advance', amount: creditUsed }] : [])], terms: caps.terms,
     })
@@ -529,16 +579,28 @@ export default function BillingPage() {
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3"><span className="text-[14px] font-semibold">Total Bill Amount</span><span className="text-[28px] font-bold leading-none text-[#1F6FEB]">{rupee(total)}</span></div>
             {(disc > 0 || taxAmount > 0) && <div className="mt-1 text-right text-[11.5px] text-gray-500">Subtotal {rupee(subtotal)}{disc > 0 && ` · Discount −${rupee(disc)}`}{taxAmount > 0 && ` · ${caps.taxName || 'Tax'}${caps.taxRate ? ` ${caps.taxRate}%` : ''} +${rupee(taxAmount)}`}</div>}
-            {caps.discount && <div className="mt-1.5 flex items-center justify-between text-[12.5px] text-gray-700"><label htmlFor="bill-discount">Discount <span className="text-[11.5px] text-gray-400">(on bill)</span></label><span className="flex"><input id="bill-discount" value={discount} inputMode="decimal" placeholder="0" onChange={(e) => setDiscount(e.target.value.replace(/[^0-9.]/g, ''))} className="h-8 w-[84px] rounded-l-md border border-gray-200 px-2 text-right text-[13px] outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /><select aria-label="Discount type" value={discountType} onChange={(e) => setDiscountType(e.target.value)} className="h-8 rounded-r-md border border-l-0 border-gray-200 bg-white px-1.5 text-[12.5px]"><option value="fixed">₹</option><option value="percent">%</option></select></span></div>}
-            {customer && (creditUsed > 0 || customer.udharDue > 0) && <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 text-[11.5px]">{customer.udharDue > 0 ? <span className="text-[#E58A00]">Old {tx('udhar')} {rupee(customer.udharDue)}</span> : <span />}{creditUsed > 0 && <span className="text-[#2F6FEB]">Advance applied −{rupee(creditUsed)} · Due now {rupee(dueNow)}</span>}</div>}
+            {caps.discount && <div className="mt-1.5 flex items-center justify-between text-[12.5px] text-gray-700"><label htmlFor="bill-discount">Discount <span className="text-[11.5px] text-gray-400">(on bill)</span></label><span className="flex"><input id="bill-discount" value={discount} inputMode="decimal" placeholder="0" onChange={(e) => { discTouched.current = true; setDiscFromDefault(false); setDiscount(e.target.value.replace(/[^0-9.]/g, '')) }} className="h-8 w-[84px] rounded-l-md border border-gray-200 px-2 text-right text-[13px] outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /><select aria-label="Discount type" value={discountType} onChange={(e) => { discTouched.current = true; setDiscFromDefault(false); setDiscountType(e.target.value) }} className="h-8 rounded-r-md border border-l-0 border-gray-200 bg-white px-1.5 text-[12.5px]"><option value="fixed">₹</option><option value="percent">%</option></select></span></div>}
+            {caps.discount && discFromDefault && Number(discount) > 0 && <div className="mt-0.5 text-right text-[11px] text-[#12A05C]">Default discount applied — change or clear it before generating</div>}
+            {customer && (creditUsed > 0 || customer.udharDue > 0) && <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 text-[11.5px]">{customer.udharDue > 0 ? <span className="text-[#E58A00]">Old {tx('udhar')} {rupee(customer.udharDue)}</span> : <span />}{creditUsed > 0 && <span className="text-[#2F6FEB]">{ADV_LABEL} −{rupee(creditUsed)} · Due now {rupee(dueNow)}</span>}</div>}
+            {acctAfter != null && (acctBefore > 0 || acctAfter > 0) && <div className="mt-0.5 text-right text-[11.5px] text-gray-600">{acctBefore > 0 && <>Previous {tx('udhar')} {rupee(acctBefore)} · </>}This bill {rupee(total)} · Paid {rupee(Math.max(netPaid, 0))} → <b className="text-[#D92D20]">Remaining {tx('udhar')} {rupee(Math.max(acctAfter, 0))}</b></div>}
+            {oldSettle > 0 && <div className="mt-0.5 text-right text-[11.5px] text-[#E8590C]">Old {tx('udhar')} paid {rupee(oldSettle)} · This bill paid {rupee(Math.min(billRecv, dueNow))}</div>}
 
             {method !== 'Udhar' && caps.partialPayment !== false && <div className="mt-2 text-right"><button type="button" onClick={() => setSplitOn((o) => !o)} className="text-[12px] font-medium text-[#2F6FEB] hover:underline">{splitOn ? 'Single payment' : 'Split payment'}</button></div>}
             {splitOn && method !== 'Udhar' && <div className="mt-2 grid grid-cols-3 gap-2" data-split>{[['cash', 'Cash'], ['upi', 'UPI'], ['card', 'Card']].map(([k, l]) => <label key={k} className="text-[12px] text-gray-600">{l}<input aria-label={`${l} amount`} value={splitAmts[k]} inputMode="decimal" placeholder="0" onChange={(e) => setSplitAmts((a) => ({ ...a, [k]: e.target.value.replace(/[^0-9.]/g, '') }))} className="mt-0.5 h-9 w-full rounded-lg border border-gray-200 px-2 text-[14px] outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>)}<div className="col-span-3 text-right text-[12px] text-gray-500">Received {rupee(splitSum)}{balance > 0 ? ` · ${rupee(balance)} due` : ''}</div></div>}
-            <div className={`mt-3 ${splitOn && method !== 'Udhar' ? 'hidden' : ''}`}><label className="text-[12.5px] text-gray-800">Amount Received <span className="text-[11.5px] text-gray-400">(F3)</span></label>
+            <div className={`mt-3 ${splitOn && method !== 'Udhar' ? 'hidden' : ''}`}>
+              <label className="text-[12.5px] text-gray-800">
+                Amount Received 
+                <span className="text-[11.5px] text-gray-400">(F3)</span>
+                  </label>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <div className="relative w-[130px]"><input ref={refR} value={recv ?? String(received)} inputMode="decimal" aria-label="Amount received" onChange={(e) => setRecv(e.target.value.replace(/[^0-9.]/g, ''))} onFocus={(e) => e.target.select()} onKeyDown={onRecvKey}
+                <div className="relative w-[130px]"><input ref={refR} value={recv ?? String(received)} inputMode="decimal" aria-label="Amount received" onChange={(e) => { setOldPay(null); setRecv(e.target.value.replace(/[^0-9.]/g, '')) }} onFocus={(e) => e.target.select()} onKeyDown={onRecvKey}
                   className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-3 pr-7 text-[17px] outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /><span className="absolute right-2.5 top-[9px] text-[15px] text-gray-500">₹</span></div>
-                {recvChips.map((v) => <button key={v} type="button" onClick={() => { setRecv(String(v)); focusSoon(refR, true) }} className={chip(received === v)}>{rupee(v)}</button>)}
+                {recvChips.map((v) => <button key={v} type="button" onClick={() => { setOldPay(null); setRecv(String(v)); focusSoon(refR, true) }} className={chip(received === v)}>{rupee(v)}</button>)}
+                {udharPend > 0
+                  ? <button type="button" onClick={toggleOldUdhar} title={`${tx('Udhar')} pending ${rupee(udharPend)} — add it to Amount Received`} className={`h-8 rounded-md border px-2.5 text-[12.5px] font-medium transition ${oldSettle > 0 ? 'border-red-500 bg-red-500 text-white' : 'border-red-300 bg-orange-50 text-red-600 hover:bg-orange-100'}`}>+{rupee(udharPend)}</button>
+                  : advCap > 0
+                    ? <button type="button" onClick={toggleAdvance} title={`Pay from Advance Balance (${rupee(customer.credit)} available)`} className={`h-8 rounded-md border px-2.5 text-[12.5px] font-medium transition ${advOn ? 'border-[#2F6FEB] bg-[#2F6FEB] text-white' : 'border-[#BBD2FA] bg-[#E6F0FE] text-[#2F6FEB] hover:bg-[#D6E6FD]'}`}>-{rupee(advCap)}</button>
+                    : null}
               </div>
             </div>
 
@@ -549,12 +611,14 @@ export default function BillingPage() {
                 <div><div className="mb-1 text-[12.5px] text-gray-800">Return Amount</div><div className="grid h-10 place-items-center rounded-lg bg-[#E8F7EF] text-[19px] font-semibold text-[#12A05C]">{rupee(change)}</div></div>)}
               <div>
                 <div className="mb-1 text-[12.5px] text-gray-800">Returned by Seller <span className="text-[11px] text-gray-400">(Optional)</span></div>
-                {balance > 0 || change === 0 ? <div className="pt-2 text-[11.5px] text-gray-400">{balance > 0 ? 'Not needed for udhar' : 'No change to return'}</div> : (
+                {balance > 0 || (change === 0 && !(udharPend > 0 && (plainChange > 0 || compOn))) ? <div className="pt-2 text-[11.5px] text-gray-400">{balance > 0 ? 'Not needed for udhar' : 'No change to return'}</div> : (
                   <div className="flex flex-wrap gap-1.5">
-                    {retChips.map((v, i) => <button key={v} type="button" onClick={() => setRetMode(i === 0 ? 'auto' : v)} className={chip((i === 0 && retMode === 'auto') || retMode === v)}>{i === 0 ? rupee(v) : 'Keep as advance'}</button>)}
-                    <button type="button" onClick={() => setRetMode('custom')} className={chip(retMode === 'custom')}>Custom</button>
+                    {change > 0 && retChips.map((v, i) => <button key={v} type="button" onClick={() => setRetMode(i === 0 ? 'auto' : v)} className={chip((i === 0 && retMode === 'auto') || retMode === v)}>{i === 0 ? rupee(v) : 'Keep as advance'}</button>)}
+                    {change > 0 && <button type="button" onClick={() => setRetMode('custom')} className={chip(retMode === 'custom')}>Custom</button>}
+                    {udharPend > 0 && <button type="button" aria-pressed={compOn} onClick={() => setCompFor(compOn ? null : customer.id)} title={compOn ? 'Compensation is ON — tap to go back to the normal Return Amount' : `Use the change to pay ${customer?.name || 'the customer'}’s old ${tx('udhar')} (${rupee(udharPend)}) instead of returning it`} className={`h-8 rounded-md border px-2.5 text-[12.5px] font-medium transition ${compOn ? 'border-red-500 bg-red-500 text-white' : 'border-red-300 bg-orange-50 text-red-600 hover:bg-orange-100'}`}>Compensate</button>}
+                    {compOn && <span className="basis-full text-[11px] text-[#E8590C]">Compensate ON — {rupee(oldSettle - oldBtn)} of the change pays old {tx('udhar')}{acctAfter > 0 ? ` · ${tx('Udhar')} left ${rupee(acctAfter)}` : ''}. Tap Compensate again for the normal Return Amount.</span>}
                     {keptCredit > 0 && <span className="basis-full text-[11px] text-[#2F6FEB]">{rupee(keptCredit)} will be added to {customer ? `${customer.name}’s` : 'customer'} Advance Balance</span>}
-                    {retMode === 'custom' && <input autoFocus value={retCustom} inputMode="decimal" placeholder="₹" onChange={(e) => setRetCustom(e.target.value.replace(/[^0-9.]/g, ''))} className="h-8 w-[84px] rounded-md border border-orange-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-orange-100" />}
+                    {retMode === 'custom' && change > 0 && <input autoFocus value={retCustom} inputMode="decimal" placeholder="₹" onChange={(e) => setRetCustom(e.target.value.replace(/[^0-9.]/g, ''))} className="h-8 w-[84px] rounded-md border border-orange-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-orange-100" />}
                   </div>)}
               </div>
             </div>
@@ -593,18 +657,18 @@ export default function BillingPage() {
             <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-[13px]">
               <thead className="bg-[#F5F7FA]"><tr className="text-left text-[12px] font-semibold text-gray-700"><th className="px-3 py-2">Bill ID</th><th>{tx('Customer')}</th><th className="text-center">Amount</th><th className="text-center">Payment</th><th className="text-center">Status</th><th className="text-center">Actions</th></tr></thead>
               <tbody>{recent.data.map((r) => (
-                <tr key={r.billId} onClick={() => openDetail(r.billId)} className="cursor-pointer border-b border-gray-50 transition hover:bg-[#FFFAF4]">
+                <tr key={r.billId} onClick={() => openDetail(r.billId)} title="Open bill details" className="cursor-pointer border-b border-gray-50 transition hover:bg-[#FFFAF4]">
                   <td className="px-3 py-2.5 leading-tight"><span className="font-medium">{r.id}</span><span className="block text-[11px] text-gray-400">{time(r.time)}{multi && ` · ${r.typeLabel || TXN_LABEL[r.transactionType] || 'Sale'}`}</span></td><td><CustomerLink id={r.customerId} className="font-medium">{r.customer}</CustomerLink></td><td className="text-center">{rupee(r.amount)}</td>
                   <td className="text-center"><span className={`inline-block min-w-[64px] rounded-md px-2.5 py-0.5 text-[12px] font-medium ${payBadge[r.payment] || payBadge.Cash}`}>{r.payment}</span></td>
                   <td className="text-center"><StatusPill s={r.status} /></td>
                   <td className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <span className="inline-flex items-center gap-1.5"><button type="button" onClick={() => openDetail(r.billId)} className="rounded-md bg-[#EAF3FF] px-4 py-1 text-[12px] font-medium text-[#2F6FEB] transition hover:bg-[#d9eaff]">View</button>
+                    <span className="inline-flex items-center gap-1.5"><ShareMenu label="Share" getDoc={() => call('get', `/api/seller/billing/bills/${r.billId}/document`)} onError={(m) => say('err', m)} className="flex items-center gap-1 rounded-md bg-[#EAF3FF] px-3 py-1 text-[12px] font-medium text-[#2F6FEB] transition hover:bg-[#d9eaff] disabled:opacity-60" />
                       <button type="button" onClick={() => openSaved(r.billId)} className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-[12px] text-gray-700 transition hover:border-orange-300"><Printer size={12} />Print</button></span>
                   </td></tr>))}</tbody>
             </table></div>)}
       </section>
 
-      {optionsOpen && <BillingOptions cfg={cfg} onClose={() => setOptionsOpen(false)} onSaved={(c) => { setCfg(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0].type)); if (c.capabilities.services || c.capabilities.labour) loadServices(); setOptionsOpen(false) }} />}
+      {optionsOpen && <BillingOptions cfg={cfg} onClose={() => setOptionsOpen(false)} onSaved={(c) => { setCfg(c); applyDefaultDiscount(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0].type)); if (c.capabilities.services || c.capabilities.labour) loadServices(); setOptionsOpen(false) }} />}
       {preview && <BillPreview bill={preview} onClose={() => setPreview(null)} onSave={saveFromPreview} />}
       {draftsOpen && (
         <Modal title={`Drafts (${drafts.length})`} onClose={() => setDraftsOpen(false)}>
@@ -637,7 +701,7 @@ export default function BillingPage() {
                 <div className="text-[15px] font-semibold text-gray-900">Grand Total {rupee(detail.total)}</div>
                 <div>Amount Paid {rupee(detail.paid)}{detail.due > 0 && <b className="ml-3 text-[#D92D20]">Outstanding {rupee(detail.due)}</b>}</div>
                 <div className="text-[12.5px] text-gray-500">Payment: {detail.payments?.length ? [...new Set(detail.payments.filter((p) => p.method !== 'advance').map((p) => ({ cash: 'Cash', upi: 'UPI', card: 'Card' }[p.method] || p.method)))].join(' + ') || detail.payment : detail.payment} · Status: <b className="text-gray-800">{detail.paymentStatus || detail.status}</b></div>
-                {detail.payments?.length > 1 && <div className="text-[12px] text-gray-500">{detail.payments.map((p, i) => <span key={i} className="ml-2">{{ cash: 'Cash', upi: 'UPI', card: 'Card', advance: 'Advance' }[p.method] || p.method} {rupee(p.amount)}</span>)}</div>}
+                {detail.payments?.length > 1 && <div className="text-[12px] text-gray-500">{detail.payments.map((p, i) => <span key={i} className="ml-2">{{ cash: 'Cash', upi: 'UPI', card: 'Card', advance: ADV_LABEL }[p.method] || p.method} {rupee(p.amount)}</span>)}</div>}
               </dl>
               <div className="mt-4 flex justify-end"><BillActions getDoc={() => call('get', `/api/seller/billing/bills/${detail.billId}/document`)} onError={(m) => say('err', m)} /></div>
             </div>)}
@@ -692,6 +756,7 @@ function BillPreview({ bill: p, onClose, onSave }) {
         <div className="mt-1 flex justify-between text-[12.5px] text-gray-600"><span>Paid</span><span className="font-medium">{rupee(T.paid)}</span></div>
         {T.due > 0 && <div className="flex justify-between text-[12.5px] font-medium text-[#D92D20]"><span>Due</span><span>{rupee(T.due)}</span></div>}
         <div className="mt-1 flex justify-between text-[12.5px] text-gray-600"><span>Payment</span><span className="font-medium">{d.payment.method} · {d.payment.status}</span></div>
+        {d.account && (() => { const a = accountBlock(d); return <div className="mt-3 rounded-lg border border-[#E6E0FA] bg-[#FAF8FF] p-2.5 text-[12.5px]"><div className="mb-1 text-[11px] font-semibold tracking-wide text-[#6D5BD0]">{a.title}</div>{a.rows.map(([l, v, b]) => <div key={l} className={`flex justify-between ${b ? 'font-semibold text-[#D92D20]' : 'text-gray-600'}`}><span>{l}</span><span>{v}</span></div>)}</div> })()}
         {err && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12.5px] text-red-600">{err}</p>}
 
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2">

@@ -20,11 +20,15 @@ export default function BillingOptions({ cfg, onClose, onSaved }) {
   const [caps, setCaps] = useState(() => ({ ...cfg.capabilities }))
   const [ctx, setCtx] = useState(() => (cfg.capabilities.context || []).map((f) => ({ ...f })))
   const [taxRate, setTaxRate] = useState(String(cfg.capabilities.taxRate || '')); const [taxName, setTaxName] = useState(cfg.capabilities.taxName || 'GST'); const [terms, setTerms] = useState(cfg.capabilities.terms || '')
+  const [dd, setDd] = useState(() => ({ type: cfg.capabilities.defaultDiscountType === 'fixed' ? 'fixed' : 'percent', value: cfg.capabilities.defaultDiscountValue ? String(cfg.capabilities.defaultDiscountValue) : '' }))
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('')
   const flip = (k) => setCaps((c) => ({ ...c, [k]: !c[k] }))
   const save = async () => {
+    const ddv = Number(dd.value) || 0
+    if (caps.discount && caps.defaultDiscountEnabled && !(ddv > 0)) return setErr('Enter the default discount amount, or turn the default discount off.')
+    if (dd.type === 'percent' && ddv > 100) return setErr('A percentage discount cannot be more than 100%.')
     setBusy(true); setErr('')
-    try { onSaved(await call('put', '/api/seller/billing/config', { ...caps, taxRate: Number(taxRate) || 0, taxName, terms, context: ctx.filter((f) => f.label.trim()) })) }
+    try { onSaved(await call('put', '/api/seller/billing/config', { ...caps, defaultDiscountEnabled: !!caps.defaultDiscountEnabled, defaultDiscountType: dd.type, defaultDiscountValue: ddv, taxRate: Number(taxRate) || 0, taxName, terms, context: ctx.filter((f) => f.label.trim()) })) }
     catch (e) { setErr(e.message || 'Could not save') } finally { setBusy(false) }
   }
   return (
@@ -37,6 +41,12 @@ export default function BillingOptions({ cfg, onClose, onSaved }) {
             <button type="button" role="switch" aria-checked={!!caps[k]} aria-label={label} onClick={() => flip(k)} className={`relative h-6 w-11 rounded-full transition ${caps[k] ? 'bg-[#12A05C]' : 'bg-gray-300'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${caps[k] ? 'left-[22px]' : 'left-0.5'}`} /></button>
           </li>))}
       </ul>
+      {caps.discount && (
+        <div className="mt-3 rounded-lg border border-gray-100 bg-[#FAFBFD] p-3">
+          <div className="flex items-center gap-3"><span className="flex-1 leading-tight"><span className="block text-[13.5px] font-medium">Default discount</span><span className="text-[11.5px] text-gray-400">Pre-filled on every new bill — you can still change or clear it before generating</span></span>
+            <button type="button" role="switch" aria-checked={!!caps.defaultDiscountEnabled} aria-label="Default discount" onClick={() => flip('defaultDiscountEnabled')} className={`relative h-6 w-11 rounded-full transition ${caps.defaultDiscountEnabled ? 'bg-[#12A05C]' : 'bg-gray-300'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${caps.defaultDiscountEnabled ? 'left-[22px]' : 'left-0.5'}`} /></button></div>
+          {caps.defaultDiscountEnabled && <div className="mt-2 flex items-center gap-2"><span className="flex"><input aria-label="Default discount value" value={dd.value} inputMode="decimal" placeholder="0" onChange={(e) => setDd((x) => ({ ...x, value: e.target.value.replace(/[^0-9.]/g, '') }))} className="h-9 w-24 rounded-l-lg border border-gray-200 px-3 text-right text-[13px] outline-none focus:border-orange-400" /><select aria-label="Default discount type" value={dd.type} onChange={(e) => setDd((x) => ({ ...x, type: e.target.value }))} className="h-9 rounded-r-lg border border-l-0 border-gray-200 bg-white px-2 text-[13px]"><option value="percent">%</option><option value="fixed">₹</option></select></span></div>}
+        </div>)}
       {caps.tax && <div className="mt-3 flex items-end gap-2"><label className="text-[12px] text-gray-600">Tax name<input value={taxName} maxLength={12} onChange={(e) => setTaxName(e.target.value)} className="mt-0.5 h-9 w-24 rounded-lg border border-gray-200 px-3 text-[13px] outline-none focus:border-orange-400" /></label><label className="text-[12px] text-gray-600">Rate %<input value={taxRate} inputMode="decimal" onChange={(e) => setTaxRate(e.target.value.replace(/[^0-9.]/g, ''))} className="mt-0.5 h-9 w-24 rounded-lg border border-gray-200 px-3 text-[13px] outline-none focus:border-orange-400" /></label></div>}
       <label className="mt-3 block text-[12px] text-gray-600">Terms / note printed on invoices <span className="text-gray-400">(optional)</span><textarea value={terms} maxLength={300} rows={2} onChange={(e) => setTerms(e.target.value)} className="mt-0.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-orange-400" /></label>
       <div className="mt-4 border-t border-gray-100 pt-3">

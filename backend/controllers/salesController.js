@@ -13,6 +13,7 @@ import { billingCapabilities, LINE_TYPES, LINE_LABEL, TYPE_CAP } from '../utils/
 import { deriveTransactionType, computeBill, costBreakdown as costTotals, resolveContext, cleanChargeLine, cleanLineExtras, cleanDiscount } from '../utils/billing.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { generateBillId } from '../utils/billId.js'
+import { computeSettlement, postBillLedger } from '../utils/settlement.js'
 import { hooksFor } from '../utils/businessHooks.js'
 import { consumeFIFO, restoreToBatches, trimBreakdown, breakdownOfSale, mergeBreakdown, weightedCost, withProduct, r3, StockError } from '../utils/stock.js'
 
@@ -148,23 +149,18 @@ export const recordSale = asyncHandler(async (req, res) => {
     : null
   if (cust && hooks.ensureParty) await hooks.ensureParty(account, cust) // the person also becomes a Member (study centre)
   const standing = cust ? await Udhar.findOne({ shopId, customerId: cust._id }).select('totalAmount').lean() : null
-  const advanceHeld = standing && standing.totalAmount < 0 ? -standing.totalAmount : 0
 
   // ---- Work out the settlement ----
   // 1) Advance Balance is auto-deducted first. 2) What the customer actually pays is compared with what is still due.
-  const creditUsed = cust && req.body.useCredit !== false ? Math.min(advanceHeld, totalAmount) : 0
-  const dueNow = r2(totalAmount - creditUsed)
-  let netPaid
-  if (receivedAmount != null) netPaid = r2(Number(receivedAmount) - Number(returnedAmount || 0))
-  else if (paymentMode === 'custom') netPaid = Number(amountPaid)
-  else netPaid = dueNow
-  if (Number.isNaN(netPaid) || netPaid < 0) {
-    return bad(400, 'Enter a valid amount paid (0 or more).')
-  }
-  const paidNow = Math.min(netPaid, dueNow)
-  const unpaidAmount = r2(dueNow - paidNow)                 // paid < due  → Udhar
-  const extraPaid = cust ? r2(Math.max(netPaid - dueNow, 0)) : 0 // paid > due → Advance Balance (needs a saved customer)
-  const paidAmount = r2(creditUsed + paidNow)
+  // The seller chooses the advance explicitly (billing screen "−₹…" → advanceToUse) and the money collected against old udhar (oldUdharPaid); the server applies
+  // exactly that, capped by what is really held / owed — utils/settlement.js is the single piece of arithmetic (older clients keep the automatic advance).
+  const st = computeSettlement({
+    totalAmount, hasCustomer: !!cust, balance: standing?.totalAmount ?? 0, useCredit: req.body.useCredit,
+    advanceAsked: req.body.advanceToUse == null ? null : Number(req.body.advanceToUse) || 0, oldAsked: req.body.oldUdharPaid,
+    received: receivedAmount, returned: returnedAmount, paymentMode, amountPaid,
+  })
+  if (st.error) return bad(400, st.error)
+  const { creditUsed, oldPaid, unpaidAmount, extraPaid, paidAmount } = st
   const paymentStatus = unpaidAmount <= 0 ? 'paid' : paidAmount <= 0 ? 'unpaid' : 'partial'
 
   if (unpaidAmount > 0 && addRemainingToUdhar && !cname) {
@@ -230,6 +226,7 @@ export const recordSale = asyncHandler(async (req, res) => {
       creditId: null,
       paymentMethod: ['upi', 'cash', 'card', 'udhar'].includes(paymentMethod) ? paymentMethod : 'cash',
       creditUsed,
+      balanceBefore: cust ? standing?.totalAmount ?? 0 : null, // snapshot for the customer-facing "previous udhar" (see utils/billing.js#accountSummary)
       customerId: cust?._id || null,
       status: 'paid',
       receivedAmount: receivedAmount == null ? null : Number(receivedAmount),
@@ -250,19 +247,9 @@ export const recordSale = asyncHandler(async (req, res) => {
     const pm = ['upi', 'cash', 'card'].includes(paymentMethod) ? paymentMethod : 'cash'
     const ledgerItems = lines.map((l) => ({ name: l.name, qty: l.qty, price: l.rate }))
     const ref = billId.slice(-6).toUpperCase()
-    const base = { shopId, customer: cust, source: 'billing', billId, items: ledgerItems, paymentType: pm }
-    let udharAdded = 0, advanceAdded = 0, paidTowardsUdhar = 0, last = null
     ledgerTouched = true
-    if (cust && creditUsed > 0) last = await applyLedger({ ...base, type: 'use_credit', amount: creditUsed, note: `Advance used · Bill ${ref}` })
-    if (cust && unpaidAmount > 0 && addRemainingToUdhar) {
-      last = await applyLedger({ ...base, type: 'udhar', amount: unpaidAmount, note: `Bill ${ref}` })
-      udharAdded = unpaidAmount
-    }
-    if (cust && extraPaid > 0) {
-      // pays any older udhar first; only what is left over becomes Advance Balance
-      last = await applyLedger({ ...base, type: 'payment', amount: extraPaid, note: `Extra paid · Bill ${ref}` })
-      for (const e of last.entries) { if (e.type === 'credit') advanceAdded = r2(advanceAdded + e.amount); else paidTowardsUdhar = r2(paidTowardsUdhar + e.amount) }
-    }
+    const posted = await postBillLedger({ shopId, customer: cust, billId, items: ledgerItems, paymentType: pm, ref, creditUsed, unpaidAmount, addToUdhar: !!addRemainingToUdhar, oldPaid, extraPaid })
+    const { last, udharAdded, advanceAdded, paidTowardsUdhar } = posted
     const balance = last ? last.udhar.totalAmount : standing?.totalAmount ?? 0
     if (advanceAdded > 0) bill.advanceAdded = advanceAdded
     bill.status = advanceAdded > 0 ? 'advance' : unpaidAmount > 0 ? 'udhar' : 'paid'

@@ -4,7 +4,7 @@ import { useOutletContext } from 'react-router-dom'
 import { Download, Printer, Plus, Search, CalendarDays, Wallet, ArrowUpDown, Eye, ChevronRight, ChevronLeft, Store, ShoppingCart, Box, Truck, CheckCircle2, Package, RefreshCw } from 'lucide-react'
 import { useSeller, call, Modal } from '../kit.jsx'
 import { useCustomerPanel } from '../CustomerPanel.jsx'
-import { Av, PayBadge, StatusSelect, Menu, STATUS, inr, time, dateOnly, waLink, orderText, printHtml, payText } from '../orders/shared.jsx'
+import { Av, PayBadge, StatusSelect, Menu, STATUS, inr, time, dateOnly, waLink, orderText, printHtml, payText, pageKey, pageList } from '../orders/shared.jsx'
 import { thermalHtml, printHtml as printDoc } from '../billOutput.js'
 
 const TABS = ['All', 'Draft', ...STATUS] // Draft sits first: drafts are always on top of the list
@@ -90,7 +90,7 @@ export default function OrdersPage() {
   const toggleAll = () => setPicked(allPicked ? new Set() : new Set(rows.map((o) => o.billId)))
   const toggle = (id) => setPicked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
 
-  const pages = useMemo(() => { const n = d?.pages || 1, c = d?.page || 1; const a = []; for (let i = 1; i <= n; i++) if (i === 1 || i === n || Math.abs(i - c) <= 1) a.push(i); return a.reduce((o, i, k) => (k && i - a[k - 1] > 1 ? [...o, '…', i] : [...o, i]), []) }, [d])
+  const pages = useMemo(() => pageList(d?.pages || 1, d?.page || 1), [d])
   const from = d && d.total ? (d.page - 1) * d.limit + 1 : 0, to = d ? Math.min(d.page * d.limit, d.total) : 0
   const S = summary
 
@@ -180,7 +180,7 @@ export default function OrdersPage() {
         <span className="text-[12px] text-gray-500">Showing {from}–{to} of {d?.total ?? 0} orders</span>
         <div className="flex items-center gap-1">
           <button type="button" disabled={!d || d.page <= 1} onClick={() => setPage(page - 1)} aria-label="Previous page" className="grid h-8 w-8 place-items-center rounded-md border border-[#E3EAF3] bg-white text-gray-600 transition hover:border-orange-300 disabled:opacity-40"><ChevronLeft size={15} /></button>
-          {pages.map((p, i) => (p === '…' ? <span key={i} className="px-1 text-gray-400">…</span> : <button key={p} type="button" onClick={() => setPage(p)} className={`h-8 min-w-8 rounded-md border px-2 text-[12px] font-medium transition ${p === d?.page ? 'border-orange-500 bg-orange-500 text-white' : 'border-[#E3EAF3] bg-white text-gray-700 hover:border-orange-300'}`}>{p}</button>))}
+          {pages.map((p, i) => (p === '…' ? <span key={pageKey(p, i)} className="px-1 text-gray-400">…</span> : <button key={pageKey(p, i)} type="button" onClick={() => setPage(p)} className={`h-8 min-w-8 rounded-md border px-2 text-[12px] font-medium transition ${p === d?.page ? 'border-orange-500 bg-orange-500 text-white' : 'border-[#E3EAF3] bg-white text-gray-700 hover:border-orange-300'}`}>{p}</button>))}
           <button type="button" disabled={!d || d.page >= d.pages} onClick={() => setPage(page + 1)} aria-label="Next page" className="grid h-8 w-8 place-items-center rounded-md border border-[#E3EAF3] bg-white text-gray-600 transition hover:border-orange-300 disabled:opacity-40"><ChevronRight size={15} /></button>
         </div>
       </div>

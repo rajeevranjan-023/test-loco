@@ -5,6 +5,7 @@ import Udhar from '../models/Udhar.js'
 import Customer from '../models/Customer.js'
 import GlobalUser from '../models/GlobalUser.js'
 import BillDraft from '../models/BillDraft.js'
+import UdharHistory from '../models/UdharHistory.js'
 import { PHONE_RE, mostUsedName, totalUses, touchGlobalUser } from '../utils/globalUser.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { displayBillId } from '../utils/billId.js'
@@ -309,10 +310,16 @@ export const billDocument = asyncHandler(async (req, res) => {
   }
   const caps = billingCapabilities(req.sellerAccount, req.sellerType)
   const sch = schemaFor(req.sellerType)
+  // Bills made before the balanceBefore snapshot existed: previous balance = balanceAfter − what THIS bill itself posted to the ledger. Read-only; nothing is written.
+  let balanceBefore = bill.balanceBefore
+  if (balanceBefore == null && bill.balanceAfter != null && bill.customerId) {
+    const posted = await UdharHistory.find({ shopId: sid(req), billId: bill.billId, source: 'billing' }).select('delta').lean()
+    balanceBefore = round2(bill.balanceAfter - posted.reduce((s, e) => s + (e.delta || 0), 0))
+  }
   const member = hasCapability(req.sellerType, 'members') && bill.customerId ? await StudyMember.findOne({ centerId: sid(req), customerId: bill.customerId }).select('memberCode').lean() : null
   res.json(buildDocument({
     business: businessOf(req.sellerAccount, req.sellerType),
-    bill: { ...bill, items, displayId: shortId(bill), memberCode: member?.memberCode || '' },
+    bill: { ...bill, items, balanceBefore, displayId: shortId(bill), memberCode: member?.memberCode || '' },
     payments: await paymentsOf(bill), terms: caps.terms, partyLabel: sch.billing.partyLabel, partyIdLabel: member ? `${sch.billing.partyLabel} ID` : '',
   }))
 })
