@@ -1,8 +1,5 @@
 import mongoose from 'mongoose'
 
-// Who sits on which seat, and in which time slot. A row is ACTIVE while releasedAt is null.
-// Membership expiry never touches this collection — only an explicit release does (owner, or the member leaving
-// through a confirmed request). Released rows stay forever as seat history.
 const slotSub = new mongoose.Schema({ start: String, end: String, label: String, fullDay: Boolean }, { _id: false })
 const assignmentSchema = new mongoose.Schema(
   {

@@ -1,27 +1,8 @@
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-//  OTP MODULE — the ONLY place in the backend that knows how a verification code is made, sent, stored or checked.
-//
-//  The registration flow talks to it through four calls and nothing else:
-//      requestOtp({ purpose, subject, phone })   → create + send a code (also used for "resend")
-//      verifyOtp({ purpose, subject, phone, code })
-//      isOtpVerified({ purpose, subject, phone }) → server-side proof that this subject verified this phone
-//      cancelOtp({ purpose, subject })
-//  To change the mechanism later (new SMS vendor, WhatsApp, voice…) edit THIS file only: add a provider below or change
-//  `generateCode`. Controllers, routes and the frontend never see a code, a provider name, or the dev value.
-//
-//  MODES
-//    production      real random code (OTP_LENGTH digits, default 6) sent through OTP_SMS_PROVIDER.
-//    dev-fixed       a fixed development code, so the flow can be tested without an SMS account.
-//                    Needs OTP_DEV_FIXED=true. It is REFUSED — the server will not start — when NODE_ENV=production
-//                    (or RENDER=true / VERCEL=1), so it can never be switched on by accident in a live deployment.
-//    (neither)       requestOtp fails with a clear configuration error instead of silently doing something unsafe.
-// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 import crypto from 'crypto'
 import OtpChallenge from '../models/OtpChallenge.js'
 import { isProduction, safeEqual } from './authHelpers.js'
 import { logger } from './logger.js'
 
-// The development-only code. Intentionally defined here and nowhere else in the project.
 const DEV_FIXED_CODE = '1435'
 
 const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : d }
@@ -42,7 +23,6 @@ export class OtpError extends Error {
   constructor(code, message, extra = {}) { super(message); this.name = 'OtpError'; this.code = code; Object.assign(this, extra) }
 }
 
-// Call once at server start. Throws (→ process exits) if the configuration is unsafe or unusable.
 export function assertOtpConfig() {
   if (isDevFixedRequested() && isProduction()) {
     throw new Error('OTP_DEV_FIXED=true is not allowed in production. Remove it and configure OTP_SMS_PROVIDER.')

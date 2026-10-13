@@ -14,7 +14,6 @@ const serviceProviderSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
 
-    // Mirrors User.username — see Shop.js for why this is duplicated here.
     username: { type: String, required: true, unique: true, trim: true },
 
     // ---------- Basic ----------

@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// Study-Center side of a person. The shared Customer document (name · phone · udhar ledger · bills) stays the single
-// identity so Billing, Pending Dues and the global phone directory work unchanged; this adds what only a centre needs.
 const studyMemberSchema = new mongoose.Schema(
   {
     centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'StudyCenter', required: true, index: true },

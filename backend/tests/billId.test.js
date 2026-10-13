@@ -1,7 +1,3 @@
-// Unit tests for the bill-id maths. No database needed:
-//  - slotFor()        : pure mapping
-//  - the Mongo update pipeline is replayed with `mingo` (a JS aggregation engine) and must agree with slotFor()
-//    and with the reference algorithm written in the brief (count 101 → 9999 → next letter, count 1).
 import assert from 'node:assert/strict'
 import { slotFor, formatBillId, formatFullId, dateParts, displayBillId, nextAlphabet, __pipelineForTest } from '../utils/billId.js'
 

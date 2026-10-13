@@ -1,7 +1,3 @@
-// End-to-end smoke test against an isolated, disposable MongoDB database.
-// Preferred: set TEST_MONGODB_URI to a local disposable database.
-// Otherwise mongodb-memory-server starts a temporary in-memory MongoDB instance.
-// Never point TEST_MONGODB_URI at Atlas or another hosted cluster.
 
 process.env.NODE_ENV = 'test'
 process.env.JWT_SECRET = 'test-secret'

@@ -15,7 +15,6 @@ function UsernameField({ value, onChange, onValidityChange }) {
 
   React.useEffect(() => {
     onValidityChange?.(status === 'available')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
   const copy = STATUS_COPY[status] || STATUS_COPY.empty

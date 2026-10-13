@@ -12,9 +12,6 @@ import { EMAIL_RE as LOGIN_EMAIL_RE } from '../utils/authHelpers.js'
 // _________________________________________________________________________
 // =========================================================================
 // POST /api/auth/register
-// Legacy one-step signup (name + email + password, no mobile/OTP). The website now uses the verified multi-step flow in
-// registrationController.js, so this endpoint is switched off unless ALLOW_LEGACY_REGISTER=true (or NODE_ENV=test, which the
-// existing integration tests rely on). Leaving it open would let anyone skip OTP verification.
 export const register = asyncHandler(async (req, res) => { 
   if (process.env.NODE_ENV !== 'test' && process.env.ALLOW_LEGACY_REGISTER !== 'true') {
     return res.status(410).json({ message: 'This signup method has been replaced. Please sign up at /signup.' })
@@ -74,14 +71,6 @@ export const getMe = asyncHandler(async (req, res) => {
 
 // _________________________________________________________________________
 // =========================================================================
-// PATCH /api/auth/me  (protected) — the Edit Account endpoint, usable by
-// ANY logged-in user (consumer or seller). A user can only ever edit their
-// own record: it always operates on req.user (from the verified JWT), never
-// on an id supplied in the request.
-//
-// Body (all optional): name, username, email, phone, bio, avatarUrl, bannerUrl
-// For sellers, username/email/phone/name/bannerUrl are mirrored onto their
-// Shop/ServiceProvider doc so the public profile page stays in sync.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_REGEX = /^\+?[0-9][0-9\s\-()]{6,17}$/
 
@@ -171,9 +160,6 @@ export const updateLocation = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 
-// POST /api/auth/logout  (protected)
-// Ends THIS session only (the token that made the request) — other devices stay logged in. The token is recorded as revoked, so
-// a stale copy (another tab, bfcache, a copied header) can no longer authenticate, even before its 30-day expiry.
 export const logout = asyncHandler(async (req, res) => {
   const token = String(req.headers.authorization || '').split(' ')[1]
   const exp = jwt.decode(token)?.exp

@@ -5,12 +5,8 @@ const ViewModeContext = createContext(null)
 
 export function ViewModeProvider({ children }) {
   const { isSeller, epoch } = useAuth()
-  // First-time visitors (nothing in localStorage yet) land on the normal
-  // consumer homepage — 'seller' is only ever reached by explicitly
-  // clicking "Analytic View", at which point it's persisted here.
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('lf_view_mode') || 'consumer')
 
-  // A different account must never inherit the previous account's view mode (logout also clears the stored value).
   const first = useRef(true)
   useEffect(() => {
     if (first.current) { first.current = false; return }
@@ -23,11 +19,8 @@ export function ViewModeProvider({ children }) {
     }
   }, [viewMode, isSeller])
 
-  // Non-sellers can never be in seller mode, regardless of stored state.
   const effectiveMode = isSeller ? viewMode : 'consumer'
 
-  // Explicit, single-purpose setters (used by the "Home" / "Analytic View"
-  // nav buttons) rather than a single ambiguous toggle.
   const goHome = () => setViewMode('consumer')
   const goAnalytics = () => setViewMode('seller')
 

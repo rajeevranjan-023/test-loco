@@ -2,8 +2,6 @@ import express from 'express'
 import { requireCapability } from '../middleware/auth.js'
 import * as S from '../controllers/studyController.js'
 
-// Mounted at /api/seller/study (after protect + requireSeller). Only accounts whose business schema has the
-// `seatManagement` capability (study centres) can reach it — shops and service providers get 403.
 const router = express.Router()
 router.use(requireCapability('seatManagement'))
 

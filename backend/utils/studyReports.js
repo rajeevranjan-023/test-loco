@@ -1,8 +1,3 @@
-// Study Center dashboard · analytics · notifications. Every number is computed from real documents
-// (Bill · Udhar ledger · StudyMember · Membership · SeatAssignment) — there is no placeholder or sample data in here.
-//
-// The analytics *configuration* (which KPI cards and charts exist, their labels and formats) is returned together with the data,
-// so the frontend renders any business's analytics from config alone (see frontend ConfigAnalytics).
 import Bill from '../models/Bill.js'
 import Udhar from '../models/Udhar.js'
 import UdharHistory from '../models/UdharHistory.js'

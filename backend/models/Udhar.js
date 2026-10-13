@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// One running udhar account per customer. totalAmount > 0 = customer owes the shop,
-// totalAmount < 0 = customer has an advance/credit with the shop, 0 = cleared.
 const udharSchema = new mongoose.Schema(
   {
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },

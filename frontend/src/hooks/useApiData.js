@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react'
 
-// Like useMockApi, but for real network calls: awaits an async fetcher
-// (typically api.get(...)) and exposes {data, loading, error}. Re-runs
-// whenever `deps` changes (e.g. a search query).
 export function useApiData(fetcher, deps = []) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)

@@ -4,12 +4,8 @@ import { profilePath, sectionOf } from '../utils/username.js'
 import { useBusiness, SHOP_BUSINESS } from '../context/BusinessContext.jsx'
 import { iconOf } from './ownerIcons.js'
 
-// The one navigation bar for owner/admin — shared by the profile page and the dashboard shell.
-// The tabs come from the business schema (shop: Profile · Dashboard · Billing · Udhar · Analytics · Inventory · Customer · Add;
-// study centre: Profile · Dashboard · Billing · Members · Courses · Seats · Analytics · Pending Dues · Add).
 export const OWNER_NAV = SHOP_BUSINESS.nav
 
-// Which tab is lit for /:username/<section>/…  (bill & order detail pages belong to Dashboard)
 const ALIAS = { bill: 'dashboard', order: 'dashboard', member: 'members' }
 export const activeKey = (pathname, nav = OWNER_NAV) => {
   const sec = sectionOf(pathname)
@@ -18,7 +14,6 @@ export const activeKey = (pathname, nav = OWNER_NAV) => {
   return nav.some((n) => n.key === key) ? key : null
 }
 
-// Render ONLY for owner/admin — viewers must never get this component (callers gate it with useAccess().canManage).
 export default function OwnerNav({ username, className = '' }) {
   const { business } = useBusiness()
   const nav = business.nav

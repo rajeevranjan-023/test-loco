@@ -1,9 +1,3 @@
-// Database failure handling against the REAL Mongoose / MongoDB driver and the REAL app (server.js, connectDB, guard, health).
-// No MongoDB installation and no real database is involved:
-//   • "unavailable" = a closed local port → the driver produces its genuine server-selection errors;
-//   • "available, then lost, then back" = tests/_support/fakeMongo.js, a minimal wire-protocol stand-in on 127.0.0.1 that lets the
-//     real driver connect, notice the loss and reconnect. It stores nothing and nothing here writes data.
-//   node tests/db.resilience.test.js
 import assert from 'node:assert/strict'
 
 process.env.NODE_ENV = 'test'

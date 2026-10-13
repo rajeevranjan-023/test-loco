@@ -37,9 +37,6 @@ export const listCustomers = asyncHandler(async (req, res) => {
 
 // What a notebook line is called in the UI
 const describe = (e) => (e.type === 'adjustment' ? 'Adjustment' : e.type === 'udhar' ? (e.source === 'billing' ? 'Bill (Udhar)' : 'Udhar added') : e.type === 'payment' ? (e.source === 'billing' ? 'Bill Payment' : 'Payment received') : e.delta > 0 ? 'Advance used' : 'Advance Payment')
-// Customer's point of view: owing is NEGATIVE, Advance is POSITIVE. (Ledger: delta + = owes more.)
-//   change  = −delta        e.g. udhar ₹200 → −200 · payment ₹100 → +100 · advance ₹50 → +50
-//   balance = −balanceAfter e.g. owes ₹63 → −63 · advance ₹300 → +300
 const entryOut = (e) => ({ id: e._id, customerId: e.customerId, type: e.type, description: describe(e), amount: e.amount, delta: e.delta, change: r2(-e.delta), date: e.date, balanceAfter: e.balanceAfter, balance: r2(-e.balanceAfter), remaining: Math.max(e.balanceAfter, 0), paymentType: e.paymentType })
 const txnStatus = (b) => (b.advanceAdded > 0 ? 'Advance' : b.unpaidAmount > 0 ? 'Udhar' : 'Paid')
 
@@ -75,8 +72,6 @@ export const getCustomerHistory = asyncHandler(async (req, res) => {
 })
 
 // GET /api/customers/activity?period=daily|weekly|monthly|custom&from=YYYY-MM-DD&to=YYYY-MM-DD
-// Time series for the Customer Activity chart. One response carries all four metrics so switching metric needs no refetch:
-//   spent   = bill totals · orders = bill count · udhar = udhar given · advance = advance added (extra payments / deposits)
 const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x }
 const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x }
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
@@ -139,8 +134,6 @@ export const updateCustomer = asyncHandler(async (req, res) => {
 
 // ───────────────────────── Transaction timeline ─────────────────────────
 // GET /api/customers/:id/transactions?type=all|bills|payments|udhar|advance|adjustments&limit=120
-// One chronological account of the customer: Bill · Payment · Udhar · Adjustment, each with the balance AFTER it.
-//   ledger sign: + owes the shop · − Advance Balance.
 const FILTERS = ['all', 'bills', 'payments', 'udhar', 'advance', 'adjustments']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const shortBill = (id) => displayBillId(id)
@@ -233,7 +226,6 @@ export const addAdjustment = asyncHandler(async (req, res) => {
 })
 
 // GET /api/customers/:id/global — the same person (same phone, via globalUserId) across ALL shops.
-// Only money facts are shared (date · amount · paid/udhar) — never the other shops' item lists or notes.
 export const getGlobalHistory = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const c = await Customer.findOne({ _id: req.params.id, shopId: sid(req) }).select('globalUserId').lean()

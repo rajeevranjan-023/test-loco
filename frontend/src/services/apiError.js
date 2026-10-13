@@ -1,32 +1,19 @@
-// The ONE place that turns a failed request into something a person can read.
-//
-// Every failure leaves services/api.js as an `ApiError`:
-//   .message      always safe to show (never an Axios message, URL, stack, HTML page or driver text)
-//   .kind         'offline' | 'network' | 'timeout' | 'unauthorized' | 'forbidden' | 'validation' | 'notFound' | 'conflict'
-//                 | 'rateLimited' | 'unavailable' | 'server' | 'client' | 'canceled'
-//   .status       HTTP status (0 when there was no response)             ┐ unchanged from before: existing callers
-//   .data         the backend's JSON body, only when it IS a JSON object ┘ read .data.errors / .data.code / .retryAfter …
-//   .fieldErrors  { field: message } – only plain, safe strings from the backend's `errors`
-//   .retryable    true only when repeating the request cannot do harm (GET/HEAD) and the failure is transient
-//   .retryAfter   seconds, from Retry-After / body (rate limits, outages)
-//   .requestId    support reference printed by the backend
-// Because `.message` is already safe, the ~100 places that render `err.message` keep working and become safe at once.
 
 export const MESSAGES = {
   offline: "You appear to be offline. Check your internet connection and try again.",
-  network: "We can't reach the server right now. Please check your connection and try again in a moment.",
+  network: "Please check your connection and try again in a moment.",
   timeout: 'The request took too long. Please try again.',
   sessionExpired: 'Your session has expired. Please log in again.',
   unauthorized: 'Please check your details and try again.',
-  forbidden: "You don't have permission to do that.",
+  forbidden: "You don't have permission.",
   notFound: "We couldn't find what you were looking for.",
   validation: 'Some of the information you entered is not valid. Please check it and try again.',
   duplicate: 'That already exists. Please use a different value or log in.',
   conflict: 'This was changed by someone else. Please refresh and try again.',
   rateLimited: 'Too many requests. Please wait a moment and try again.',
-  database: 'We are having trouble reaching our database. Please try again in a moment.',
+  database: 'Something went wrong. Please try again in a moment.',
   unavailable: 'The service is temporarily unavailable. Please try again in a moment.',
-  server: 'Something went wrong on our side. Please try again.',
+  server: 'Something went wrong. Please try again.',
   tooLarge: 'That is too large to send. Please use a smaller file.',
   client: 'That request could not be completed. Please check your input and try again.',
   canceled: 'Request cancelled.',

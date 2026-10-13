@@ -8,7 +8,6 @@ import { loginUrl } from '../utils/redirect.js'
 import AppMenu from './menus/AppMenu.jsx'
 import UserMenu from './menus/UserMenu.jsx'
 
-// Header:  [Loco logo → application menu]   Home · Search · Analytics   🔔  [avatar → personal account menu]
 export default function Navbar() {
   const navigate = useNavigate()
   const { user, isAuthenticated, isSeller } = useAuth()
@@ -18,7 +17,6 @@ export default function Navbar() {
   const ownerBase = user?.username ? profilePath(user.username) : null
   const merchant = isAuthenticated && isSeller && !!ownerBase // decided from the real account, not a flag
 
-  // Analytics follows the account: a business owner keeps the existing merchant analytics; everybody else gets their personal activity.
   const openAnalytics = () => {
     if (!isAuthenticated) return navigate(loginUrl('/activity'))
     navigate(merchant ? profilePath(user.username, 'dashboard') : '/activity')

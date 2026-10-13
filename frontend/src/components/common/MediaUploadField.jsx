@@ -12,13 +12,6 @@ const DEFAULT_IMAGE_PLACEHOLDER =
     '</svg>'
   )
 
-/**
- * Uploads an image or video to Cloudinary (via the backend) with a live
- * progress bar and instant local preview while the upload streams. Falls
- * back to a generic placeholder graphic when nothing has been uploaded.
- *
- * kind: 'image' | 'video' — controls accepted file types and preview style.
- */
 function MediaUploadField({ label, value, onChange, folder = 'general', kind = 'image', optional = true, shape = 'square' }) {
   const inputRef = useRef(null)
   const [localPreview, setLocalPreview] = useState(null)

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// A member enrolled in a course. Created when a Course Fee line is billed (Billing is the only payment path).
 const enrollmentSchema = new mongoose.Schema(
   {
     centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'StudyCenter', required: true, index: true },

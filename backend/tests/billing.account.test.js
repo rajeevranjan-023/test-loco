@@ -1,5 +1,3 @@
-// Udhar account block · View-only markup · default discount config — pure logic + the real billDocument controller with stubbed models (no database).
-//   node tests/billing.account.test.js
 import assert from 'node:assert/strict'
 process.env.NODE_ENV = 'test'
 import { computeBill, buildDocument, accountSummary, cleanDiscount } from '../utils/billing.js'
@@ -40,7 +38,6 @@ const docOf = (b, o = {}) => buildDocument({ business: { name: 'Raj Store' }, bi
 }
 // ── money collected against the PREVIOUS udhar is kept apart from this bill's payment (spec: never show one payment twice) ──
 {
-  // previous ₹183, bill ₹62, received ₹283 → ₹38 returned: bill ₹62 paid, ₹183 collected against old udhar, nothing left
   const b = bill({ totalAmount: 62, paidAmount: 62, unpaidAmount: 0, balanceBefore: 183, balanceAfter: 0, receivedAmount: 283, returnedAmount: 38, creditUsed: 0 })
   const a = accountSummary(b)
   assert.equal(a.billPaid, 62); assert.equal(a.collectedOld, 183); assert.equal(a.returned, 38); assert.equal(a.advanceKept, 0); assert.equal(a.remainingDue, 0)

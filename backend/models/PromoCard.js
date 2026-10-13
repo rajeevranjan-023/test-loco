@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// Side promo card shown next to a homepage row ("Need a Shop?" …). One active card per section.
 const promoCardSchema = new mongoose.Schema(
   {
     section: { type: String, enum: ['shops', 'services', 'libraries'], required: true, index: true },

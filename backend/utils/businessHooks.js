@@ -1,13 +1,3 @@
-// Per-business behaviour that must run INSIDE the shared billing flow, chosen by the account's sellerType
-// (never by name / id). The billing engine (controllers/salesController.js#recordSale) calls whichever hooks exist:
-//
-//   cleanMeta(item, type, account)        → { meta } | { error }     validate the business-specific part of one bill line
-//   validate({ account, lines, customer })→ throws {status,message}  refuse the bill BEFORE anything is written
-//   afterBill({ account, bill, lines, calc, customer, summary })     create memberships / seat assignments / enrollments
-//   undo({ account, billId })                                        remove what afterBill created if the bill is rolled back
-//   ensureParty(account, customer)                                   register the person in the business's own member system
-//
-// Shop and Service have no hooks: their bills behave exactly as before.
 import mongoose from 'mongoose'
 import Course from '../models/Course.js'
 import Enrollment from '../models/Enrollment.js'
@@ -45,7 +35,6 @@ const studyHooks = {
     return { meta: undefined }
   },
 
-  // Membership lines: the seat must be free for that slot, and a bill can't claim the same seat/slot twice.
   async validate({ account, lines }) {
     const claimed = []
     for (const l of lines) {
@@ -71,7 +60,6 @@ const studyHooks = {
       const l = lines[i], total = calc.lines[i]?.total ?? 0
       if (l.type === 'membership' && l.meta) {
         const plan = (account.config?.plans || []).find((p) => p.key === l.meta.planKey) || { key: l.meta.planKey, name: l.name, months: l.meta.months, price: l.rate }
-        // this line's share of the bill (line totals are before the bill-level discount, so split by share of the subtotal)
         const share = calc.subtotal > 0 ? total / calc.subtotal : 0
         const pending = Math.round(bill.unpaidAmount * share * 100) / 100
         const lineDiscount = Math.round(((calc.lines[i]?.discount || 0) + (calc.billDiscount || 0) * share) * 100) / 100

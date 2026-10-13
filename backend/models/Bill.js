@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// One line of a bill — a frozen snapshot (name, rate, cost) so history stays correct if the product/service changes later.
 const lineSchema = new mongoose.Schema({
   type: { type: String, enum: ['product', 'service', 'material', 'labour', 'other', 'membership', 'course', 'book', 'fine', 'registration', 'seat'], required: true },
   refId: { type: mongoose.Schema.Types.ObjectId, default: null }, // Product (product/material) or ServiceItem (service/labour) when there is one
@@ -35,9 +34,6 @@ const billSchema = new mongoose.Schema(
     unpaidAmount: { type: Number, required: true, min: 0 },
     paymentStatus: { type: String, enum: ['paid', 'partial', 'unpaid'], required: true },
 
-    // If the unpaid remainder was pushed to the Udhar ledger, this points
-    // at that Credit entry so the two stay traceable to each other.
-    // Fulfilment state shown in the dashboard's Recent Orders (existing bills default to Delivered).
     paymentMethod: { type: String, enum: ['upi', 'cash', 'card', 'udhar'], default: 'cash' },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null, index: true },
     status: { type: String, enum: ['paid', 'udhar', 'advance'], default: 'paid' }, // settlement: paid · udhar (owes) · advance (customer paid extra)

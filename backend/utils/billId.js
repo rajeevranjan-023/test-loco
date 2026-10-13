@@ -2,11 +2,6 @@ import BillCounter from '../models/BillCounter.js'
 
 // Bill ID:  #<YY><MM><DD><SERIES><COUNT>      e.g. #261003A0101
 //
-//  • The "#" is display-only. The database stores "261003A0101" so the id can sit safely in
-//    URLs (a literal "#" would be treated as a URL fragment). Use displayBillId() for the UI.
-//  • COUNT starts at 0101 (not 0001) so a shop never looks brand new.
-//  • At 9999 the series moves on:  A9999 → B0001.
-//  • Counters are per shop and per day.
 
 export const BILL_TZ = process.env.BILL_TZ || 'Asia/Kolkata' // the shop's calendar day, not the server's
 export const FIRST_COUNT = 101
@@ -30,7 +25,6 @@ export function dateParts(now = new Date(), timeZone = BILL_TZ) {
 }
 
 // Pure mapping: the Nth bill of the day  →  { series, count }.  (1st → A0101, 9,899th → A9999, 9,900th → B0001 …)
-// The database pipeline below implements exactly the same arithmetic.
 export function slotFor(issued) {
   if (issued <= FIRST_SERIES_CAPACITY) return { series: 'A', count: FIRST_COUNT - 1 + issued }
   const m = issued - FIRST_SERIES_CAPACITY - 1
@@ -44,9 +38,6 @@ export const formatBillId = ({ yy, mm, dd, series, count }) => `${yy}${mm}${dd}$
 // Internal / support id, e.g. RAB50-20261003-A-0101
 export const formatFullId = ({ shopRef, yyyy, mm, dd, series, count }) => `${shopRef}-${yyyy}${mm}${dd}-${series}-${String(count).padStart(4, '0')}`
 
-// ONE round-trip, fully atomic: increment `issued`, then derive series + count from it.
-// Every concurrent request gets a distinct `issued`, so no two requests can ever share an id.
-// (A plain $inc on `count` can't do the 101 start or the A9999 → B0001 rollover safely.)
 const A_CAP = FIRST_SERIES_CAPACITY
 const advancePipeline = () => [
   { $set: { issued: { $add: [{ $ifNull: ['$issued', 0] }, 1] } } },
@@ -100,8 +91,6 @@ export function displayBillId(billId, legacyPrefix = '#') {
   return NEW_ID.test(id) ? `#${id}` : `${legacyPrefix}${id.slice(-4).toUpperCase()}`
 }
 
-// Old databases have a GLOBAL unique index on billId. New ids repeat across shops (every shop has an A0101),
-// so uniqueness must be per shop. Safe to run on every boot.
 export async function ensureBillIndexes() {
   const { default: Bill } = await import('../models/Bill.js')
   try { await Bill.collection.dropIndex('billId_1') } catch { /* already gone / never existed */ }

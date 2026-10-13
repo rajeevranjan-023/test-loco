@@ -5,9 +5,6 @@ import Grid from './Grid.jsx'
 import Card from './Card.jsx'
 import PromoCard from './PromoCard.jsx'
 
-// Header on top, then cards + promo on the SAME row (xl+), so the promo is exactly as tall as the cards.
-// Below xl the promo stacks under the cards. `promoSide` alternates left/right.
-// No promo configured → the cards simply take the full width.
 export default function ContentRow({ icon, title, subtitle, items = [], promo, promoSide = 'right', searchQuery, city, emptyLabel, loading, onSearch, onView, onCall, onWhatsApp }) {
   const left = promoSide === 'left'
   const cols = promo ? (left ? 'xl:grid-cols-[260px_minmax(0,1fr)]' : 'xl:grid-cols-[minmax(0,1fr)_260px]') : ''

@@ -1,11 +1,3 @@
-// Study Center — PURE logic (no database, no framework). Everything the seat grid, the membership rules and the
-// seed rely on lives here so it can be unit-tested without MongoDB (tests/study.logic.test.js).
-//
-//   seat naming   : any pattern the owner picks (A1.., 1.., 101.., Cabin-1.., or a custom list)
-//   time slots    : 'HH:MM' 24h strings; overlap = real overlap (08–12 and 12–16 do NOT conflict)
-//   seat state    : occupied (green) · partial (orange) · empty (red) · unavailable (gray) — from ASSIGNMENTS only,
-//                   never from membership expiry or dues
-//   due display   : "₹500 · 5d" / "₹1,200 · 2m"
 export const MAX_SEATS_PER_BATCH = 500
 export const DAY = 864e5
 
@@ -54,8 +46,6 @@ export function coveredMinutes(active, win = DEFAULT_WINDOW) {
   return total
 }
 
-// THE seat state. Depends ONLY on active assignments (and the disabled flag) — an expired membership or an unpaid
-// due never changes it; only releasing the assignment does.
 export function seatState(seat, active, win = DEFAULT_WINDOW) {
   if (seat?.disabled) return 'unavailable'
   const span = toMin(win.close) - toMin(win.open), got = coveredMinutes(active, win)
@@ -78,11 +68,6 @@ export const dueText = (amount, since, now) => (amount > 0.005 ? `${rupees(amoun
 const rowLetters = (i) => { let s = '', n = i; do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 } while (n >= 0); return s }
 const cleanName = (s) => String(s ?? '').trim().replace(/\s+/g, ' ').slice(0, 24)
 
-// naming = { mode: 'grid' | 'sequence' | 'custom', ... }
-//   grid     { rows: 5, perRow: 10, startRow: 'A' }            → A1…A10, B1…B10 …
-//   sequence { prefix: '', start: 1, count: 40, pad: 0 }       → 1,2,3…  /  101,102…  /  Cabin-1, Cabin-2…
-//   custom   { names: ['Window-1', 'Corner'] }
-// Returns { names } or { error }. Names are unique within the batch; callers also check against existing seats.
 export function buildSeatNames(naming = {}) {
   const mode = naming.mode || 'grid'
   let names = []
@@ -123,7 +108,6 @@ export function addMonths(date, n) {
   d.setDate(Math.min(day, last))
   return d
 }
-// Renewal: the new period starts where the old one ends (if that is still ahead), otherwise today. History is never overwritten.
 export const renewalStart = (oldEnd, now = new Date()) => (+new Date(oldEnd) > +new Date(now) ? new Date(oldEnd) : new Date(now))
 export const isExpired = (endDate, now = new Date()) => !!endDate && +new Date(endDate) < +new Date(now)
 

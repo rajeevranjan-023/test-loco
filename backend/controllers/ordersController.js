@@ -12,16 +12,13 @@ import { displayBillId } from '../utils/billId.js'
 import { restoreToBatches, breakdownOfSale, withProduct, r3 } from '../utils/stock.js'
 
 const STATUSES = ['New', 'Preparing', 'Out for Delivery', 'Delivered', 'Cancelled']
-// List order: Draft (always first, newest first) → New → Preparing → Out for Delivery → Cancelled → Delivered
 const DAY = 864e5
 const sid = (req) => req.sellerAccount._id
-// Any seller account (shop OR service provider) uses the one billing / customer / inventory system.
 const shopOnly = () => false
 const short = (billId) => displayBillId(billId)
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const METHOD = { upi: 'UPI', cash: 'Cash', card: 'Card', udhar: 'Udhar' }
 
-// How a bill's payment should be shown: Paid (green) · Pending ₹x (orange) · Udhar ₹x (purple) · Advance Used (blue)
 function payInfo(b, { onLedger, acctBal }) {
   const method = METHOD[b.paymentMethod] || 'Cash'
   if (b.orderStatus === 'Cancelled') return { kind: 'void', amount: 0, method }
@@ -31,7 +28,6 @@ function payInfo(b, { onLedger, acctBal }) {
   return { kind: 'paid', amount: 0, method: method === 'Udhar' ? 'Cash' : method, advance: b.advanceAdded || 0 }
 }
 
-// context for a set of bills: which have udhar ledger lines, and each customer's current account
 async function context(req, bills) {
   const ids = bills.map((b) => b.billId)
   const names = [...new Set(bills.filter((b) => b.unpaidAmount > 0 && b.customerName).map((b) => b.customerName))]
@@ -85,7 +81,6 @@ export const listOrders = asyncHandler(async (req, res) => {
     Bill.aggregate([{ $match: base }, { $group: { _id: '$orderStatus', n: { $sum: 1 } } }]),
   ])
   const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])); grouped.forEach((g) => (counts[g._id] = g.n))
-  // drafts live in their own collection (no stock / ledger / analytics effect) and are merged in on top
   const dFilter = { shopId: sid(req) }
   if (text) dFilter.$or = [{ customerName: new RegExp(esc(text), 'i') }, { customerPhone: new RegExp(esc(text)) }]
   if (rng) dFilter.updatedAt = { $gte: rng[0], ...(rng[1] ? { $lt: rng[1] } : {}) }
@@ -100,7 +95,6 @@ export const listOrders = asyncHandler(async (req, res) => {
   const pmap = Object.fromEntries(prods.map((p) => [String(p._id), p]))
   const byBill = {}; lines.forEach((l) => (byBill[l.billId] ||= []).push(l))
   const ctx = await context(req, bills)
-  // customer ids for the clickable name/phone (bills created before customerId existed are matched by name)
   const missing = [...new Set(bills.filter((b) => !b.customerId && b.customerName).map((b) => b.customerName))]
   const byName = missing.length ? Object.fromEntries((await Customer.find({ shopId: sid(req), name: { $in: missing } }).select('name').lean()).map((c) => [c.name, c._id])) : {}
 
@@ -151,7 +145,6 @@ async function reverseOrder(req, bill, { removeDocs }) {
       if (p.listed === false) p.billedCount = Math.max((p.billedCount || 1) - 1, 0)
     })
   }
-  // Service materials were consumed from the same batches (no Sale row) — give them back too.
   for (const it of (bill.items || []).filter((i) => i.type === 'material' && i.refId)) {
     await withProduct({ _id: it.refId, shopId }, (p) => {
       restoreToBatches(p, it.costBreakdown || [], bill.createdAt)

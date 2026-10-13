@@ -1,7 +1,3 @@
-// A minimal MongoDB *wire-protocol* stand-in (TCP, OP_QUERY handshake + OP_MSG), just enough for the REAL Node driver / Mongoose
-// to connect, run its heartbeat, lose the server and reconnect. It answers every command with { ok: 1 } and a standalone
-// "hello" document; it stores nothing. Used ONLY by tests of the connection lifecycle — no data, no real database, no network
-// beyond 127.0.0.1.
 import net from 'node:net'
 import { BSON } from 'mongodb'
 

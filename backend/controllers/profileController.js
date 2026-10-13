@@ -32,7 +32,6 @@ const productShape = (p, owner, mostSellingId) => ({
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/profile/:username  (optionalAuth — so we can tell if the viewer follows this profile)
-// ?lite=1 → skips the full product list (the shop page loads products through /:username/products instead).
 export const getProfileByUsername = asyncHandler(async (req, res) => {
   const username = normalizeUsername(req.params.username)
   const lite = req.query.lite === '1'

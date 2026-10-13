@@ -75,7 +75,6 @@ export const listFollowers = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/follow/following/:userId  (public) — resolves each followed
-// target into its display name/username so the list is renderable.
 export const listFollowing = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.userId)
   if (!user) {

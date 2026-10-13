@@ -1,12 +1,6 @@
 import React from 'react'
 import '../../css/Loading.css'
 
-/**
- * Generic shimmer block — the building brick for custom skeleton layouts
- * (a line of text, an avatar circle, an image rectangle, etc).
- *
- * shape: 'line' | 'circle' | 'rect'
- */
 function Skeleton({ shape = 'line', width, height, style = {} }) {
   const dims = {
     width: width ?? (shape === 'circle' ? 40 : '100%'),

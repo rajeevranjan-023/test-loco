@@ -1,9 +1,6 @@
 import cors from 'cors'
 import { isProduction } from '../seed/guard.js'
 
-// Allowed browser origins come from CLIENT_ORIGIN (comma-separated; the same variable the auth flow already uses).
-// Production: ONLY those exact origins are allowed (no wildcard, no reflection). Development/test: any origin is
-// allowed when CLIENT_ORIGIN is unset, so local tooling keeps working.
 export const allowedOrigins = () =>
   (process.env.CLIENT_ORIGIN || '').split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean)
 
@@ -15,8 +12,6 @@ export function corsOptions() {
       if (list.length) return cb(null, list.includes(origin.replace(/\/$/, '')))
       return cb(null, !isProduction()) // nothing configured: open in dev, closed in production
     },
-    // x-registration-token: opaque signup-session token sent by the frontend on /api/auth/register/* (validated server-side by
-    // requireRegistration). Allowing it here only lets the browser SEND it; it grants no access by itself.
     allowedHeaders: ['Content-Type', 'Authorization', 'x-view-as', 'x-registration-token'],
     exposedHeaders: ['Retry-After', 'X-Request-Id'], // not CORS-safelisted: without this a cross-origin frontend cannot read them
     maxAge: 600,

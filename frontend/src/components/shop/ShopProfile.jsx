@@ -14,9 +14,6 @@ import ProductsPanel from './ProductsPanel.jsx'
 import { ProfileHeader, AboutCard, ShopInformation, PhotosSection, CategoriesSection, ReviewsSection, SimilarShops } from './PublicSections.jsx'
 import { StatsRow, BasicInformation, ShopImages, SocialLinks, EditAboutModal, EditSocialsModal } from './OwnerSections.jsx'
 
-// The shop profile (route /:username). Same page for everyone — `isOwner` swaps the action buttons and adds the management cards.
-// All content comes from the API: /api/profile/:username(?lite=1), /products, /similar, /stats, /api/reviews.
-// `embedded` = rendered inside the owner shell, which already supplies the page width/padding (so no second container here).
 export default function ShopProfile({ profile, isOwner: ownerAccess, embedded = false, refresh }) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()

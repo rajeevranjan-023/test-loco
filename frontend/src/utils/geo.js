@@ -1,8 +1,3 @@
-// Straight-line (haversine) distance in km between two lat/lng points.
-// Used as a client-side fallback for "X km away" when the backend
-// couldn't compute a distance itself (e.g. the shop has no stored
-// coordinates). When real coordinates are available (LocationContext),
-// they're passed straight to the backend instead — see sections/NearbyShops.jsx.
 export function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371
   const dLat = ((lat2 - lat1) * Math.PI) / 180

@@ -11,7 +11,6 @@ const STEPS = ['Basic Info', 'Media & Description', 'Location', 'Facilities & Ti
 const FACILITIES = ['Free Wi-Fi', 'Air Conditioned', 'Lockers', 'Charging Points', 'Power Backup', 'CCTV', 'Drinking Water', 'Discussion Room', 'Parking']
 
 // The owner only chooses "Study Center" here. Seats, zones, time slots, membership plans, charge types and billing are
-// initialised by the server from the Study Center schema — nothing else has to be configured to start.
 function StudyCenterWizard({ onBack }) {
   const [step, setStep] = useState(0)
   const [usernameValid, setUsernameValid] = useState(false)

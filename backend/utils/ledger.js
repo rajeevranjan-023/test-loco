@@ -5,14 +5,8 @@ import Bill from '../models/Bill.js'
 
 export const r2 = (n) => Math.round(n * 100) / 100
 export const EPS = 0.005
-// Customer standing from the single signed balance: + owes the shop · − shop holds an Advance Balance
 export const statusOf = (bal) => (bal > EPS ? 'pending' : bal < -EPS ? 'advance' : 'cleared')
 
-// The single place that changes a customer's account. Billing and the Udhar dashboard both call this.
-//   udhar      → balance + amount                           (history: udhar)
-//   payment    → pays udhar first; whatever is left over becomes Advance Balance   (history: payment [+ credit])
-//   credit     → balance − amount, a straight Advance deposit                      (history: credit)
-//   use_credit → consumes existing Advance Balance (bill auto-deduct), never more than is held  (history: credit, delta +)
 export async function applyLedger({ shopId, customer, type, amount, source = 'manual', billId = null, items = [], paymentType = 'cash', note = '', date = new Date() }) {
   type = { add: 'udhar', extra: 'credit' }[type] || type
   amount = r2(Number(amount))

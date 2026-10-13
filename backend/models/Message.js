@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// One chat line between the shop and a customer. Conversations are grouped by customerName.
 const messageSchema = new mongoose.Schema(
   {
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },

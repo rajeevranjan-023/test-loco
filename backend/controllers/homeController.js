@@ -162,7 +162,6 @@ async function heroSlides(city) {
 
 // ======================================================================
 // GET /api/home?city=Bhopal   — everything the homepage needs, one round trip
-// ======================================================================
 export const getHome = asyncHandler(async (req, res) => {
   const requested = String(req.query.city || '').trim()
 
@@ -214,7 +213,6 @@ export const getHome = asyncHandler(async (req, res) => {
 
 // ======================================================================
 // GET /api/home/suggest?q=fan&city=Bhopal   — live search-as-you-type
-// ======================================================================
 export const suggest = asyncHandler(async (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 60)
   if (q.length < 2) return res.json({ shops: [], services: [], products: [] })
@@ -249,7 +247,6 @@ export const suggest = asyncHandler(async (req, res) => {
 
 // ======================================================================
 // Admin CRUD for homepage config (categories / cities / promo cards)
-// ======================================================================
 const slugify = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
 export function adminCrud(Model, { pick, withSlug = false }) {

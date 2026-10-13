@@ -1,5 +1,3 @@
-// Integration test (real HTTP + real Mongo-compatible DB): MONGODB_URI=mongodb://127.0.0.1:27018/inv node tests/inventory.int.test.js
-// The bill-id counter uses a pipeline update (needs real MongoDB ≥4.2); it is stubbed here so this can also run on FerretDB.
 import assert from 'node:assert/strict'
 process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
 const { default: app } = await import('../server.js')
@@ -89,10 +87,7 @@ r = await req('GET', '/api/seller/sales', null, token)
 const re = r.data.find((s) => s._id === s2._id)
 ok(re.costBreakdown.some((x) => x.costPrice === 65) && near(re.costAtSale, re.costBreakdown.reduce((a, x) => a + x.qty * x.costPrice, 0) / re.quantity), 'recalculated sale: breakdown + costAtSale consistent')
 
-// ---- concurrency: 12 parallel sales of 0.1 from 1.5kg-ish stock → never oversell, stock == Σ batches
 r = await req('POST', `/api/seller/products/${pid2}/stock`, { quantity: 5, costPrice: 100 }, token)  // pid2: 10@90 then 5@100 = 15
-// FerretDB's SQLite backend does not make conditional updates atomic (proved separately: 30 CAS "winners", final value 11),
-// so true parallelism is only meaningful on real MongoDB → set REAL_MONGO=1 there. Elsewhere the same 20 requests run one by one.
 const fire = () => req('POST', '/api/seller/sales', { items: [{ productId: pid2, quantity: 1 }], paymentMode: 'full' }, token)
 let results
 if (process.env.REAL_MONGO) results = await Promise.all(Array.from({ length: 20 }, fire))

@@ -5,8 +5,6 @@ import Img from '../../../components/Img.jsx'
 import SearchSuggest from './SearchSuggest.jsx'
 import { profilePath } from '../../../utils/username.js'
 
-// Full-width banner; text left, image right, both inside the centered container.
-// The right-hand image is a rotating set of REAL seller banners (featured shops first, then newest) — see GET /api/home.
 export default function HeroSection({ chips = [], slides = [], onSearch, city = '' }) {
   const [q, setQ] = useState('')
   const [i, setI] = useState(0)

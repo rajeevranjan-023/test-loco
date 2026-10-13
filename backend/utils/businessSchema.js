@@ -38,11 +38,7 @@ const STUDY_NAV = [
   { key: 'add', label: 'Add', sub: 'add', icon: 'PlusCircle' },
 ]
 
-// route key → frontend module. The router renders whatever module the schema names for that URL section;
-// a section a schema does not list does not exist for that business (it redirects to the profile).
 const SHOP_MODULES = { dashboard: 'orders', billing: 'billing', udhar: 'dues', analytics: 'analytics', inventory: 'inventory', customer: 'people', add: 'billing', bill: 'bill', order: 'bill', products: 'products', offers: 'offers', messages: 'messages', shop: 'shopProfile', settings: 'settings' }
-// Service providers share the shop's billing/dues/inventory/customer screens but NOT Offers or Messages (the API answers 403 for them),
-// and they get the billing-summary analytics module instead of the shop's product-centric one.
 const { offers: _o, messages: _m, ...SHOP_SHARED_MODULES } = SHOP_MODULES
 const SERVICE_MODULES = { ...SHOP_SHARED_MODULES, analytics: 'billingAnalytics' }
 const STUDY_MODULES = { dashboard: 'studyDashboard', billing: 'billing', members: 'members', member: 'memberDetail', courses: 'courses', seats: 'seats', dues: 'dues', analytics: 'configAnalytics', inventory: 'inventory', add: 'addMenu', bill: 'bill', order: 'bill', shop: 'centerProfile', settings: 'settings', customer: 'members' }

@@ -1,9 +1,5 @@
 import React from 'react'
 
-/**
- * Small pencil icon-button used next to any editable row/field
- * (products, credit/udhar entries, sales, profile fields, availability...).
- */
 function EditButton({ onClick, label = 'Edit', className = '' }) {
   return (
     <button

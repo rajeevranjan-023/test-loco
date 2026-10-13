@@ -7,8 +7,6 @@ import { loginUrl, signupUrl } from '../../utils/redirect.js'
 import Img from '../Img.jsx'
 import { PANEL, MenuItem, MenuDivider } from './MenuParts.jsx'
 
-// APPLICATION menu — opened by the Loco logo on the LEFT of the header. Things about the app itself (home, help, starting a
-// business, signing in/out). Everything about the signed-in person lives in the avatar menu on the right (UserMenu).
 export default function AppMenu() {
   const [open, setOpen] = useState(false)
   const root = useRef(null), btn = useRef(null)

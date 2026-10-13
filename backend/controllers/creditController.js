@@ -6,8 +6,6 @@ const MAX_PINNED = 4
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/seller/credits?sort=recent|amount  (protected, shop sellers only)
-// Returns unpaid (pinned first, then by the requested sort) and paid
-// (most recently paid first) as two separate, pre-sorted lists.
 export const listCredits = asyncHandler(async (req, res) => {
   if (req.sellerType !== 'shop') {
     return res.status(403).json({ message: 'Only shop accounts use the credit ledger.' })

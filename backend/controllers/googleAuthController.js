@@ -19,7 +19,6 @@ const readCookie = (req, name) => {
 const failTo = (res, code, next) => res.redirect(`${clientOrigin()}/login?error=${encodeURIComponent(code)}${next ? `&next=${encodeURIComponent(next)}` : ''}`)
 
 // GET /api/auth/google/start?next=/shop/x
-// A top-level browser navigation. Sets a CSRF cookie, signs the state, sends the user to Google's consent/account chooser.
 export const googleStart = (req, res) => {
   const next = safeNext(req.query.next)
   if (!googleOAuth.isConfigured()) return failTo(res, 'google_not_configured', next)

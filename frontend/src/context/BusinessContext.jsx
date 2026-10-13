@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react'
 
-// The business schema (terms · navigation · modules · brand) as sent by GET /api/seller/summary → `business`.
-// Every shared screen reads it from here, so ONE set of screens adapts to Shop / Service / Study Center.
-// Until the summary has loaded (or outside the owner shell) the SHOP defaults apply — which is what every existing screen already says.
 export const SHOP_BUSINESS = {
   type: 'shop', terms: { Customer: 'Customer', customer: 'customer', Customers: 'Customers', customers: 'customers', Udhar: 'Udhar', udhar: 'udhar', Dues: 'Udhar', dues: 'udhar', DueFrom: 'Due from Customer', businessId: 'Shop ID', owner: 'Owner', business: 'Shop', partner: 'Your Local Business Partner' },
   nav: [
@@ -17,7 +14,6 @@ export const SHOP_BUSINESS = {
 
 const Ctx = createContext({ business: SHOP_BUSINESS, ready: false })
 
-// tx('Select Customer') → 'Select Member' for a study centre; unchanged for a shop. Whole-word, case-aware, plural-aware.
 export function makeTx(terms) {
   const map = [['Customers', terms.Customers], ['customers', terms.customers], ['Customer', terms.Customer], ['customer', terms.customer], ['Udhar', terms.Udhar], ['udhar', terms.udhar]]
   return (s) => (typeof s === 'string' ? map.reduce((out, [from, to]) => (to && to !== from ? out.replace(new RegExp(`\\b${from}\\b`, 'g'), to) : out), s) : s)

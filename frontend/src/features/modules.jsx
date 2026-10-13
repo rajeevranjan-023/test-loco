@@ -25,8 +25,6 @@ import SeatsPage from './study/SeatsPage.jsx'
 import ConfigAnalyticsPage from './study/ConfigAnalyticsPage.jsx'
 import AddMenuPage from './study/AddMenuPage.jsx'
 
-// THE module registry: module id (named by the business schema) → the screen(s) that render it.
-// Shared engines (billing · dues/udhar ledger · bill detail · settings) appear under several businesses; only the schema differs.
 const MODULES = {
   orders: { list: OrdersPage }, billing: { list: BillingPage }, dues: { list: UdharPage }, analytics: { list: AnalyticsPage }, billingAnalytics: { list: BillingAnalyticsPage }, inventory: { list: InventoryPage },
   people: { list: CustomersPage, detail: CustomerDetailPage }, bill: { detail: BillPage, list: BillPage }, products: { list: ProductsPage }, offers: { list: OffersPage }, messages: { list: MessagesPage },
@@ -35,13 +33,10 @@ const MODULES = {
   courses: { list: CoursesPage }, seats: { list: SeatsPage }, configAnalytics: { list: ConfigAnalyticsPage }, addMenu: { list: AddMenuPage },
 }
 
-// <Module name="members" detail /> — renders whatever module this business's schema assigns to that URL section.
-// A section the schema does not list does not exist for the business: it goes back to the profile.
 export function Module({ name, detail = false }) {
   const { business, ready } = useBusiness()
   const { user } = useAuth()
   const { username } = useParams()
-  // shops render immediately with the shop defaults (as before); every other business waits for its schema (a few ms)
   if (!ready && user?.sellerType !== 'shop') return <div className="min-h-[40vh]" aria-busy="true" />
   const id = business.modules?.[name]
   const Page = id && (detail ? MODULES[id]?.detail : MODULES[id]?.list)

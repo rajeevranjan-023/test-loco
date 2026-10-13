@@ -78,7 +78,6 @@ export default function ProductsPanel({ profile, isOwner, categories, presetCate
       .then((res) => {
         if (off) return
         setMeta({ total: res.total, pages: res.pages })
-        // viewer: "View All Products" appends the next page; owner: classic pagination replaces it
         setRows((prev) => (!isOwner && res.page > 1 ? [...prev, ...res.items] : res.items))
       })
       .catch((e) => !off && setErr(e.message))

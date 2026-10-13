@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// A saved service or labour type (e.g. "AC General Service", "Technician Labour") — just a quick-pick with a default rate.
-// The price on a bill is always typed/confirmed at billing time and snapshotted on the Bill, so editing this never rewrites history.
 const serviceItemSchema = new mongoose.Schema(
   {
     shopId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true }, // the seller account (shop or service provider)

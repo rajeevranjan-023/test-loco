@@ -1,7 +1,5 @@
 import { r2 } from './billing.js'
 
-// Read-only roll-ups over bills that already carry their stored revenue split — no billing math is redone here.
-// Days are IST calendar days (UTC+5:30).
 const IST = 330 * 6e4
 export const istDay = (d) => new Date(new Date(d).getTime() + IST).toISOString().slice(0, 10)
 const KINDS = ['product', 'material', 'service', 'labour']
@@ -20,7 +18,6 @@ export function dailySeries(bills) {
     .map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === 'number' ? r2(v) : v])))
 }
 
-// Line value as billed (before bill-level discount/tax). Internal lines billed at 0 are left out.
 export function topItems(bills, limit = 8) {
   const by = new Map()
   for (const b of bills) for (const i of b.items || []) {

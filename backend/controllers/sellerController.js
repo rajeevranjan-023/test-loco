@@ -173,10 +173,6 @@ export const getMySellerAccount = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // PATCH /api/seller/account  (protected, seller only)
-// Lets a seller edit their own shop/service profile — banner, logo,
-// description, pricing, availability, etc. Powers the "pencil" edit button
-// on the profile page. Only whitelisted, safe-to-self-edit fields are
-// accepted here (username/category changes go through dedicated flows).
 export const updateSellerAccount = asyncHandler(async (req, res) => {
   if (req.user.role !== 'seller') {
     return res.status(404).json({ message: 'No seller account yet.' })
@@ -185,9 +181,6 @@ export const updateSellerAccount = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id)
 
   // ---- Account-level fields shared by both shop & service profiles ----
-  // (name, username, email, phone, bio, avatar) — these live on User, and
-  // username/email/phone are mirrored onto the Shop/ServiceProvider doc
-  // too since that's what public profile pages read from.
   if (req.body.username !== undefined && normalizeUsername(req.body.username) !== user.username) {
     const check = await assertUsernameAvailable(req.body.username)
     if (!check.ok) return res.status(400).json({ message: check.error })

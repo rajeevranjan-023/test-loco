@@ -1,21 +1,10 @@
-// The Universal Billing Engine — PURE, dependency-free functions. ONE calculation pipeline for every business type:
-//   line totals → subtotal → discounts → tax → grand total → paid → due.
-// This exact file is mirrored byte-for-byte to frontend/src/features/analytics/billCore.js (a test enforces it), so the screen
-// and the server can never disagree on a total.
-//   line item type  : product · service · material · labour · other        (what each row IS)
-//   transaction type: sale · service · labour · mixed                        (what the whole bill IS — derived, never asked)
-//   charge mode     : charged (customer pays) · included (inside a service price — shown as "included", ₹0) · internal (inventory only, not on the customer's bill)
 export const BASE_LINE_TYPES = ['product', 'service', 'material', 'labour', 'other']   // every business
-// Study Center item types (membership · course fee · book/study material · fine · registration · seat fee). They flow through the SAME pipeline;
-// which of them a business may bill is decided by its schema (utils/businessSchema.js) and capabilities (utils/billingConfig.js).
 export const LINE_TYPES = [...BASE_LINE_TYPES, 'membership', 'course', 'book', 'fine', 'registration', 'seat']
 export const CHARGE_MODES = ['charged', 'included', 'internal']
 export const PRICING = ['fixed', 'per_unit', 'hourly', 'custom']
 
 export const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100
 
-// goods (product/material) → sale · service → service · labour → labour · two or more of those → mixed.
-// "Other charge" is neutral (a cleaning fee must not turn a plain sale into a mixed bill); an other-only bill counts as service.
 const STUDY_KIND = { membership: 'membership', registration: 'membership', seat: 'membership', course: 'course', book: 'book', fine: 'fine' }
 export function deriveTransactionType(lines) {
   const kinds = new Set()
@@ -119,8 +108,6 @@ export function cleanChargeLine(raw, type) {
 }
 
 // ── Customer-facing document ──
-// The ONE place a bill is turned into something a customer may see. It is built by WHITELIST: cost, supplier, batches, internal
-// notes and internal (non-charged) lines can never reach print / PDF / WhatsApp / SMS / Telegram because they are never copied in.
 const SECTIONS = [['product', 'PRODUCTS'], ['service', 'SERVICES'], ['material', 'MATERIALS'], ['labour', 'LABOUR'], ['membership', 'MEMBERSHIP'], ['registration', 'REGISTRATION'], ['seat', 'SEAT FEES'], ['course', 'COURSE FEES'], ['book', 'BOOKS & STUDY MATERIAL'], ['fine', 'FINES'], ['other', 'OTHER CHARGES']]
 const METHOD = { cash: 'Cash', upi: 'UPI', card: 'Card', udhar: 'Udhar', advance: 'Advance' }
 export function paymentStatusOf(b) {
@@ -129,10 +116,6 @@ export function paymentStatusOf(b) {
   return 'Partial'
 }
 // ── Udhar account summary (customer-facing) ──
-// Built ONLY from the balances snapshotted on the bill (balanceBefore / balanceAfter: + the customer owes · − the shop holds an Advance) and the
-// payment fields already stored on it — never from the live ledger — so reprinting an old bill always reads exactly as it did the day it was made.
-// Returns null when the bill has no customer account, or nothing is owed / held before or after (a plain paid bill stays unchanged).
-//   previousDue + billAmount − advanceUsed − received = remainingDue   (when the unpaid part of the bill was put on udhar)
 export function accountSummary(bill) {
   if (bill.balanceBefore == null || bill.balanceAfter == null) return null
   const before = Number(bill.balanceBefore), after = Number(bill.balanceAfter)
@@ -141,8 +124,6 @@ export function accountSummary(bill) {
   const remainingDue = Math.max(r2(after), 0), remainingAdvance = Math.max(r2(-after), 0)
   if (!(previousDue > 0 || previousAdvance > 0 || remainingDue > 0 || remainingAdvance > 0)) return null
   const net = bill.receivedAmount != null ? r2(Number(bill.receivedAmount) - Number(bill.returnedAmount || 0)) : r2((bill.paidAmount || 0) - (bill.creditUsed || 0))
-  // Split what was handed over: the part that paid THIS bill · the part collected against the PREVIOUS udhar · the part kept as Advance Balance.
-  // Derived only from fields stored on the bill, so old bills keep reading exactly as before (collectedOld = 0 unless money really went to old udhar).
   const billPaid = Math.max(r2((bill.paidAmount || 0) - (bill.creditUsed || 0)), 0)
   const advanceKept = r2(bill.advanceAdded || 0)
   const collectedOld = Math.max(r2(Math.max(net, 0) - billPaid - advanceKept), 0)

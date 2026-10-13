@@ -1,7 +1,5 @@
 import { OAuth2Client } from 'google-auth-library'
 
-// Thin wrapper around Google's official OAuth 2.0 authorization-code flow + ID-token verification.
-// Controllers call ONLY these functions (and tests replace `googleOAuth.exchangeCode` with a stub — Google itself can't be called offline).
 const apiPublicUrl = () => (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, '')
 export const redirectUri = () => process.env.GOOGLE_REDIRECT_URI || `${apiPublicUrl()}/api/auth/google/callback`
 
@@ -21,8 +19,6 @@ export const googleOAuth = {
     })
   },
 
-  // Exchanges the authorization code, then cryptographically verifies the ID token (signature, issuer, audience, expiry)
-  // and the nonce. Returns the verified identity or throws.
   async exchangeCode(code, expectedNonce) {
     const c = client()
     const { tokens } = await c.getToken(code)

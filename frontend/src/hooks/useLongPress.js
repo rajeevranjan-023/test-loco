@@ -1,10 +1,5 @@
 import { useRef, useCallback } from 'react'
 
-/**
- * Returns handlers to spread onto an element: a normal click fires
- * `onClick`, holding down for `duration` ms fires `onLongPress` instead
- * (and suppresses the click). Works for both mouse and touch.
- */
 export function useLongPress(onLongPress, onClick, duration = 550) {
   const timerRef = useRef(null)
   const triggeredRef = useRef(false)

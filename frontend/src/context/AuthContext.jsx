@@ -4,11 +4,6 @@ import * as session from '../services/session.js'
 
 const AuthContext = createContext(null)
 
-// Authentication state for this tab. Identity rules (see services/session.js):
-//   • the session token is the ONLY thing that makes someone "logged in" — browser history, cached pages and old React state never do;
-//   • whenever the identity changes the epoch changes, in-flight requests are aborted, and the whole page tree is re-created
-//     (<SessionBoundary>), so nothing the previous account loaded can show up under the new one;
-//   • another tab logging in/out, a page restored from the browser's back/forward cache, or a 401 all re-sync this tab to reality.
 export function AuthProvider({ children }) {
   const [user, setUserState] = useState(null)
   const [loading, setLoading] = useState(() => !!session.storedToken())

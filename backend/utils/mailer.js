@@ -4,8 +4,6 @@ import { isProduction } from './authHelpers.js'
 const real = (v) => !!v && !/^your_|^changeme|^$/i.test(v)
 export const isMailConfigured = () => real(process.env.MAIL_HOST) && real(process.env.MAIL_USER) && real(process.env.MAIL_PASS)
 
-// Returns true when an email was handed to the SMTP server. When SMTP is not configured: in development the message is
-// printed to the server console (so Forgot Password can be exercised locally); in production nothing sensitive is logged.
 export async function sendMail({ to, subject, text }) {
   if (!isMailConfigured()) {
     if (!isProduction()) console.log(`[mail:dev] To: ${to}\nSubject: ${subject}\n${text}\n`)

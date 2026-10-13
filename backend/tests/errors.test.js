@@ -1,5 +1,3 @@
-// Centralized error handling — real Express app + the REAL errorHandler / requestId / notFound / protect / requireOwner / rateLimit /
-// multer / Mongoose / MongoDB-driver error classes. No database is needed (nothing here reads or writes data).
 //   node tests/errors.test.js
 import assert from 'node:assert/strict'
 

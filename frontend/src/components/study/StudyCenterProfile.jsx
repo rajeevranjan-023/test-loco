@@ -6,8 +6,6 @@ import ReviewsSection from '../../features/review/ReviewsSection.jsx'
 import { DEFAULT_AVATAR, DEFAULT_BANNER } from '../../utils/placeholders.js'
 import { profilePath } from '../../utils/username.js'
 
-// Public + owner profile of a Study Center (profile layout chosen by the business type, same owner/viewer permission rules as the shop profile).
-// It shows the centre, its facilities, live seat availability and membership options — never who sits where.
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN')
 export default function StudyCenterProfile({ profile: p, isOwner, embedded, refresh }) {
   const nav = useNavigate()

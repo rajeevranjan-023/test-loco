@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// One membership PERIOD. A renewal creates a NEW row pointing back at the one it extends — old rows are never edited
-// or deleted, so a member's full history survives renewals and seat releases.
 const slotSub = new mongoose.Schema({ start: String, end: String, label: String, fullDay: Boolean }, { _id: false })
 const membershipSchema = new mongoose.Schema(
   {

@@ -31,9 +31,6 @@ function Field({ label, error, children, hint }) {
   )
 }
 
-// Instagram-style "Edit Profile" for ANY logged-in user (consumer or seller).
-// It only ever edits the signed-in user's own account: the backend derives
-// the target from the auth token, never from anything sent by the client.
 function EditAccountModal({ onClose, onSaved }) {
   const { user, updateUser } = useAuth()
 

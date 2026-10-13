@@ -459,9 +459,14 @@ export default function BillingPage() {
               <Step n={1} title={tx('Select Customer')} hint="(type name / mobile · ↓ · Enter)" />
               <div className="mt-2 flex gap-2">
                 <div className="relative flex-1">
-                  <input ref={refC} value={customerText} placeholder={tx('Search customer by name or mobile…')} autoComplete="off" aria-label="Customer"
+                  <input ref={refC} 
+                    value={customerText} 
+                    placeholder={tx('Search customer by name or mobile…')} 
+                    autoComplete="off" 
+                    aria-label="Customer"
                     onChange={(e) => { if (customer) setCustomer(null); setCq(e.target.value); setCOpen(true) }} onFocus={(e) => { setCOpen(true); customer && e.target.select() }} onBlur={() => setCOpen(false)} onKeyDown={onCustKey}
-                    className={`${inp} pr-8 ${customer ? 'border-[#12A05C] bg-[#F4FBF7] font-medium' : cOpen ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`} />
+                  
+                  className={`${inp} pr-8 ${customer ? 'border-[#12A05C] bg-[#F4FBF7] font-medium' : cOpen ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`} />
                   <ChevronDown size={15} className="pointer-events-none absolute right-3 top-[11px] text-gray-500" />
                   {cOpen && !customer && cItems.length > 0 && (
                     <ul ref={listC} className={dd} role="listbox">
@@ -469,8 +474,13 @@ export default function BillingPage() {
                       {cItems.map((it, i) => (
                         <li key={i} role="option" aria-selected={i === cIdx} data-active={i === cIdx} onMouseDown={(e) => { e.preventDefault(); pickCustomer(it) }} onMouseEnter={() => setCIdx(i)}
                           className={`flex cursor-pointer items-center gap-3 px-3 py-1.5 text-[13px] ${i === cIdx ? 'bg-[#FFF4E8]' : ''}`}>
-                          {it.t === 'add' ? <span className="font-medium text-[#2F6FEB]">+ {tx('Create new customer')}{cq.trim() ? ` “${cq.trim()}”` : ''}</span>
-                            : <><span className="flex-1 font-medium">{it.c.name}</span><span className="text-gray-500">{it.c.phone}</span>{it.c.source === 'global' && <span className="rounded bg-[#EEF2FF] px-1.5 py-0.5 text-[11px] text-[#4F46E5]" title="Found in the global directory — saved to your shop when you pick it">Global · {it.c.usageCount}× used</span>}{it.c.udharDue > 0 && <span className="rounded bg-[#FFF1DC] px-1.5 py-0.5 text-[11px] text-[#E58A00]">{tx('Udhar')} {rupee(it.c.udharDue)}</span>}{it.c.credit > 0 && <span className="rounded bg-[#E6F0FE] px-1.5 py-0.5 text-[11px] text-[#2F6FEB]">Advance {rupee(it.c.credit)}</span>}</>}
+                          {it.t === 'add' ? 
+                          <span className="font-medium text-[#2F6FEB]">+ {tx('Create new customer')}{cq.trim() ? ` “${cq.trim()}”` : ''}</span>
+                            : <><span className="flex-1 font-medium">{it.c.name}</span>
+                            <span className="text-gray-500">{it.c.phone}</span>
+                            {it.c.source === 'global' && <span className="rounded bg-[#EEF2FF] px-1.5 py-0.5 text-[11px] text-[#4F46E5]" title="Found in the global directory — saved to your shop when you pick it">Global · {it.c.usageCount}× used</span>}
+                            {it.c.udharDue > 0 && <span className="rounded bg-[#FFF1DC] px-1.5 py-0.5 text-[11px] text-[#E58A00]">{tx('Udhar')} {rupee(it.c.udharDue)}</span>}
+                            {it.c.credit > 0 && <span className="rounded bg-[#E6F0FE] px-1.5 py-0.5 text-[11px] text-[#2F6FEB]">Advance {rupee(it.c.credit)}</span>}</>}
                         </li>))}
                     </ul>)}
                   

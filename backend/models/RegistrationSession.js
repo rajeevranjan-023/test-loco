@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// Server-side registration progress. The browser only ever holds an opaque random token (stored here hashed);
-// every "verified" fact (Google identity, OTP, phone) lives on the backend and is re-checked before the account is created.
 const registrationSessionSchema = new mongoose.Schema(
   {
     tokenHash: { type: String, required: true, unique: true },

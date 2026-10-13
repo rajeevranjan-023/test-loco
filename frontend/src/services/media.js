@@ -3,11 +3,6 @@ import { BASE_URL } from './api.js'
 import { getToken } from './session.js'
 import { normalizeApiError } from './apiError.js'
 
-/**
- * Uploads a single image/video File to POST /api/media/upload.
- * `folder` organizes the asset in Cloudinary (e.g. "avatars", "products").
- * `onProgress(percent)` is called as the upload streams, for a progress bar.
- */
 export async function uploadMedia(file, folder, onProgress) {
   const token = getToken()
   const formData = new FormData()

@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { getConnectivity, reportReachable, reportUnreachable, subscribeConnectivity } from '../services/connectivity.js'
 import { MESSAGES } from '../services/apiError.js'
 
-// One calm notice when the app cannot reach the server (offline, backend down, database down). It is a single shared state, so ten
-// failed requests show ONE banner; it disappears by itself when a request succeeds or the browser comes back online. It never logs
-// anyone out and it does not retry writes — pages decide whether a "Try again" is safe (ApiError.retryable).
 const TEXT = { offline: MESSAGES.offline, network: MESSAGES.network, timeout: MESSAGES.network, unavailable: MESSAGES.unavailable }
 
 export default function ConnectionBanner() {

@@ -75,7 +75,6 @@ export const overview = asyncHandler(async (req, res) => {
 })
 
 // POST /api/seller/udhar/entries  { customerId | (name, phone), type: udhar|payment|credit, amount, paymentType, note }
-//   payment above what is owed automatically becomes Advance Balance; credit = a straight advance deposit
 export const addEntry = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const { customerId, name, phone, type, amount, paymentType, note } = req.body

@@ -1,11 +1,5 @@
 import React, { useState } from 'react'
 
-/**
- * Reusable Name / Email / Message contact form.
- * No backend endpoint exists for this yet, so it validates client-side
- * and shows a success state — swap handleSubmit for a real API call
- * (e.g. POST /api/contact) whenever that route is added on the backend.
- */
 function ContactForm() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [errors, setErrors] = useState({})
@@ -37,7 +31,6 @@ function ContactForm() {
     if (Object.keys(nextErrors).length > 0) return
 
     setSubmitting(true)
-    // Simulated send — replace with a real API call once /api/contact exists.
     await new Promise((resolve) => setTimeout(resolve, 700))
     setSubmitting(false)
     setSubmitted(true)

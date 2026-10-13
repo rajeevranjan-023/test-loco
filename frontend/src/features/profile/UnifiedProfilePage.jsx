@@ -23,18 +23,6 @@ import { useAccess } from '../../components/UsernameRoute.jsx'
 import ShopProfile from '../../components/shop/ShopProfile.jsx'
 import StudyCenterProfile from '../../components/study/StudyCenterProfile.jsx'
 
-// Backs the single unified route "/:username" (usernames are stored with
-// a literal "@" prefix already, e.g. "@doe", so this one dynamic segment
-// naturally matches "/@doe" URLs too — no separate "/@:username" pattern
-// needed, and none of the Link/navigate calls elsewhere need to change).
-// One route, one fetch (GET /api/profile/:username), and a small internal
-// `page` state that switches between tabs — a "multi-page feel" without
-// scattering the router into a dozen nested routes. Instagram-style
-// header (banner, avatar, stats, follow/edit) sits above the tab set;
-// the tab set and available actions depend on the profile type (shop vs
-// service) and on whether the viewer owns this profile.
-// Inside the owner shell the shell already provides the page width + padding, so the profile must NOT add its own
-// container (that was the sideways "row shift" between Profile and Dashboard). Viewers keep the normal site container.
 function Frame({ embedded, children }) {
   return embedded
     ? <div className="w-full min-w-0">{children}</div>
@@ -46,7 +34,6 @@ function UnifiedProfilePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canManage } = useAccess() // owner or admin → management navigation; viewer → public profile only
-  // Service-profile tab lives in the URL (?tab=about) so refresh / back / share keep the same tab.
   const [searchParams, setSearchParams] = useSearchParams()
   const page = searchParams.get('tab') || 'home'
   const setPage = (key) => setSearchParams(key === 'home' ? {} : { tab: key })
@@ -60,7 +47,6 @@ function UnifiedProfilePage() {
     [username, refreshKey]
   )
 
-  // Keep the page mounted during background refreshes (edit/save) — only show the skeleton for a first load or a different profile.
   if (loading && (!profile || !usernameMatches(profile.username, username))) {
     return (
       <Frame embedded={canManage}>
@@ -83,13 +69,9 @@ function UnifiedProfilePage() {
 
   const isOwner = usernameMatches(user?.username, profile.username) // owner → admin view, everyone else → visitor view
   const isShop = profile.type === 'shop'
-  // The listing's own circular photo — Shop.logoUrl for shops,
-  // ServiceProvider.avatarUrl for services (distinct from the personal
-  // User.avatarUrl shown when this person appears in follow lists).
   const avatarSrc = (isShop ? profile.logoUrl : profile.avatarUrl) || DEFAULT_AVATAR
   const bannerSrc = profile.bannerUrl || DEFAULT_BANNER
 
-  // The profile layout follows the business type: study centre → its own layout; shops → shop layout; service providers keep the tabbed page below.
   if (profile.type === 'study_center') {
     return <StudyCenterProfile profile={profile} isOwner={isOwner} embedded={canManage} refresh={() => setRefreshKey((k) => k + 1)} />
   }

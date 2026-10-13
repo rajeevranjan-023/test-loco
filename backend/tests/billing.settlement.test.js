@@ -1,6 +1,3 @@
-// Settlement + ledger persistence for the 4th quick button, Compensate, Advance Balance and returned change.
-// The REAL utils/settlement.js and utils/ledger.js run; only the Mongoose models are replaced by in-memory stand-ins (no database needed).
-//   node tests/billing.settlement.test.js
 import assert from 'node:assert/strict'
 process.env.NODE_ENV = 'test'
 const { default: Udhar } = await import('../models/Udhar.js')

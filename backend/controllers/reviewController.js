@@ -9,9 +9,6 @@ function getTargetModel(targetType) {
   return targetType === 'shop' ? Shop : targetType === 'study_center' ? StudyCenter : ServiceProvider
 }
 
-// Recomputes and stores the average rating + review count on the target
-// document, so shop/service listings can keep showing a fast, denormalized
-// rating without recalculating it on every page view.
 async function syncTargetRating(targetType, targetId) {
   const stats = await Review.aggregate([
     { $match: { targetType, targetId: new mongoose.Types.ObjectId(targetId) } },

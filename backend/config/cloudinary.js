@@ -1,15 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary'
 
-// Configured lazily (on first real use) rather than at module-import time.
-// This is defense-in-depth against the exact class of bug that caused
-// "Must supply api_key" here: in ESM, every `import` in server.js is
-// hoisted and evaluated before server.js's own top-level code runs — so if
-// anything imports this file (even indirectly, through a route file)
-// before `dotenv.config()` has actually executed, a module-load-time
-// `cloudinary.config({...})` call would silently run with empty env vars.
-// Configuring inside a function instead means it only ever runs once an
-// actual request comes in — by which point the server has fully booted
-// and dotenv has definitely already loaded.
+
 let configured = false
 
 function ensureConfigured() {
@@ -26,9 +17,6 @@ function ensureConfigured() {
   configured = true
 }
 
-// A live check, not a boolean captured once — env vars are read fresh
-// every time this is called, so it can't go stale relative to when
-// dotenv actually finished loading.
 export function isCloudinaryConfigured() {
   const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env
   return Boolean(
@@ -41,8 +29,6 @@ export function isCloudinaryConfigured() {
   )
 }
 
-// Call this before any cloudinary.* call. Idempotent — safe to call on
-// every request.
 export function getCloudinary() {
   ensureConfigured()
   return cloudinary

@@ -1,6 +1,3 @@
-// Every customer-facing rendering of a bill — 80mm thermal, A4 invoice, WhatsApp / Telegram text, SMS — in ONE place.
-// All of them take the document built by billCore.buildDocument (whitelisted: no cost, batches, supplier or internal notes),
-// so none of them can leak internal data. Pure functions (no DOM) so they are unit-tested in node.
 export const rs = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
 const P = (d) => d.party?.label || 'Customer' // what this business calls the person (Customer / Member)
 const dateOnly = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -10,8 +7,6 @@ const qtyText = (i) => `${i.qty}${i.unit ? ' ' + i.unit : ''}`
 const ICON = { product: '📦', service: '🔧', material: '🧰', labour: '👷', other: '➕' }
 const sectionTotal = (s) => s.items.reduce((a, i) => a + i.total, 0)
 const titleCase = (t) => t.charAt(0) + t.slice(1).toLowerCase()
-// Part of a bill paid out of the customer's Advance Balance is labelled "From Adv. Bal." on every output (billCore names it 'Advance').
-// A bill paid ONLY from the advance must not read "Payment: Cash".
 const ADV = 'From Adv. Bal.'
 const payLabel = (m) => (m === 'Advance' ? ADV : m)
 const payText = (d) => { const p = d.payment.payments || []; return p.length && p.every((x) => x.method === 'Advance') ? ADV : d.payment.method }

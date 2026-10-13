@@ -46,10 +46,6 @@ const balancesOf = async (req, ids) => {
 }
 
 // GET /api/seller/billing/customers?q=
-// Type-ahead (also served at GET /api/customers/search?q=). NOTHING is queried until there is enough input
-// (name ≥ 2 chars, phone ≥ 3 digits). At most 5 rows, from this shop's own customers.
-// Only a FULL 10-digit number that is not in this shop falls back to the global directory (exact match,
-// most-used name) so the seller can confirm / edit the name before saving it to the shop.
 export const searchCustomers = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const q = String(req.query.q || '').trim().slice(0, 40)
@@ -67,8 +63,6 @@ export const searchCustomers = asyncHandler(async (req, res) => {
   const bal = await balancesOf(req, local.map((c) => c._id))
   const out = local.map((c) => shape(c, bal))
 
-  // Global DB is a fallback ONLY for a full 10-digit number (never for partial digits or names).
-  // It returns that number's identity with its most-used name, flagged `exact`.
   if (phoneLike && PHONE_RE.test(digits) && !local.some((c) => c.phone === digits)) {
     const g = await GlobalUser.findOne({ phone: digits }).lean()
     if (g) out.push({ source: 'global', globalUserId: g._id, name: mostUsedName(g), phone: g.phone, usageCount: totalUses(g), exact: true, udharDue: 0, credit: 0 })
@@ -76,8 +70,6 @@ export const searchCustomers = asyncHandler(async (req, res) => {
   res.json(out)
 })
 
-// POST /api/seller/billing/customers/select  { globalUserId, name, phone }
-// The seller picked a person from the GLOBAL list: copy them into this shop (name is the seller's own, editable).
 export const selectGlobalCustomer = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const name = String(req.body.name || '').trim().slice(0, 80), phone = String(req.body.phone || '').trim()
@@ -258,7 +250,6 @@ export const deleteService = asyncHandler(async (req, res) => {
 })
 
 // GET /api/seller/billing/summary?days=30 — ONE standardized financial summary for every business type.
-// Legacy bills (no revenue split) count entirely as product revenue; their cost comes from the Sale lines.
 export const billingSummary = asyncHandler(async (req, res) => {
   const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365)
   const since = new Date(Date.now() - days * 864e5)
@@ -299,7 +290,7 @@ export const billingSummary = asyncHandler(async (req, res) => {
 })
 
 // GET /api/seller/billing/bills/:billId/document — the CUSTOMER-FACING bill. Built by whitelist (utils/billing.js#buildDocument):
-// 80mm print, A4 print, WhatsApp, SMS and Telegram all render from this one object, so none of them can leak cost, batches or internal notes.
+// 80mm print, A4 print, WhatsApp, SMS and Telegram all render
 export const billDocument = asyncHandler(async (req, res) => {
   const bill = await Bill.findOne({ shopId: sid(req), billId: req.params.billId }).lean()
   if (!bill) return res.status(404).json({ message: 'Bill not found.' })

@@ -1,5 +1,3 @@
-// App-wide "can we reach the server?" state. One shared flag, so many failed requests produce ONE notice (no duplicates),
-// and the notice clears itself as soon as any request succeeds or the browser reports it is back online.
 let state = { down: false, kind: null }
 const subs = new Set()
 const emit = () => subs.forEach((fn) => { try { fn(state) } catch { /* a subscriber must never break a request */ } })

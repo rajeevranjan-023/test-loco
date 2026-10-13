@@ -6,9 +6,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 
-// Clean, app-like header: logo (opens Settings), the 4-item Navbar
-// (Home / Search Servop / Analytic View / Account), the messages icon,
-// and the signed-in user's name at the far right.
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, user } = useAuth()
@@ -42,7 +39,6 @@ function Header() {
             </>
           )}
 
-          {/* Hamburger button, only visible on smaller screens */}
           <button
             className={`hamburger ${menuOpen ? 'active' : ''}`}
             onClick={() => setMenuOpen(!menuOpen)}

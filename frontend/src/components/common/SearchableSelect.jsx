@@ -1,9 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
 
-/**
- * A text input that filters a list of options as you type, with a
- * click-to-select dropdown. `options` is [{ value, label, meta }].
- */
 function SearchableSelect({ options, value, onChange, placeholder = 'Search…' }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)

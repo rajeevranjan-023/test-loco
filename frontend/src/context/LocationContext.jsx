@@ -67,24 +67,16 @@ export function LocationProvider({ children }) {
     [saveIfLoggedIn]
   )
 
-  // Auto-request once per login session (covers "app opens" and
-  // "seller logs in" — both just mean "a user object appeared").
   useEffect(() => {
-    // Not while a brand-new account is still onboarding: the signup flow has its own opt-in location screen, and the
-    // browser permission prompt must only appear after the person explicitly chooses "Enable Location".
     if (isAuthenticated && user?.onboardingCompleted !== false) {
       requestLocation()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  // Human-readable label derived from whichever coordinates we have —
-  // never shows raw lat/lng in the UI.
   const label = useMemo(() => {
     if (!coords) return null
     const match = nearestCity(coords.lat, coords.lng, EXAMPLE_CITIES)
     if (!match) return null
-    // Within ~2km, call it exact; otherwise "near <city>".
     return match.distanceKm < 2 ? `${match.city.name}, ${match.city.state}` : `Near ${match.city.name}, ${match.city.state}`
   }, [coords])
 

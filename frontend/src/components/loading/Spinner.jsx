@@ -1,10 +1,6 @@
 import React from 'react'
 import '../../css/Loading.css'
 
-/**
- * Small inline spinner for action-level loading (buttons, inline saves).
- * size: 'sm' | 'md' | 'lg'
- */
 function Spinner({ size = 'sm', label }) {
   return (
     <span className={`lf-spinner lf-spinner-${size}`} role="status" aria-live="polite">

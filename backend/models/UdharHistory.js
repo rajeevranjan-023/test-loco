@@ -1,10 +1,5 @@
 import mongoose from 'mongoose'
 
-// Immutable notebook line. type:
-//   udhar   → udhar given (customer owes more)
-//   payment → money received against udhar
-//   credit  → Advance Balance entry: customer paid extra / deposited advance (delta < 0),
-//             or advance consumed by a bill (delta > 0, paymentType 'advance')
 const historySchema = new mongoose.Schema(
   {
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },

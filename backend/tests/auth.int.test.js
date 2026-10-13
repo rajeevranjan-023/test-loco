@@ -1,7 +1,3 @@
-// Signup / OTP / Google-login / protected-access integration test (real HTTP + a Mongo-compatible DB):
-//   MONGODB_URI=mongodb://127.0.0.1:27018/loco_auth node tests/auth.int.test.js
-// Google's servers can't be reached from CI, so ONLY `googleOAuth.exchangeCode` is stubbed; state, CSRF cookie, tickets,
-// linking, registration, OTP and sessions all run for real.
 import assert from 'node:assert/strict'
 import 'dotenv/config'
 process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
@@ -22,7 +18,6 @@ const otp = await import('../utils/otp.js')
 const { safeNext, normalizeIndianMobile, validatePassword } = await import('../utils/authHelpers.js')
 { const { assertDisposableDb } = await import('./_safeDb.js'); assertDisposableDb(process.env.MONGODB_URI, 'auth.int') } // never drop a non-local database
 await connectDB(); await mongoose.connection.dropDatabase()
-// Build every declared index (unique / sparse / compound) for real — only the TTL option is dropped for FerretDB.
 for (const M of Object.values(mongoose.models)) {
   for (const [fields, opts] of M.schema.indexes()) {
     const o = { ...opts }; delete o.expireAfterSeconds; delete o.background
@@ -38,7 +33,6 @@ const req = async (method, path, body, { token, reg, headers = {}, redirect = 'f
 }
 const ok = (c, m) => { assert.ok(c, m); console.log('✅', m) }
 
-// ── Google helper: runs start → callback (with a stubbed Google identity) and returns the ticket from the redirect ──
 async function googleSignIn(identity, next = '/') {
   const s = await req('GET', `/api/auth/google/start?next=${encodeURIComponent(next)}`, null, { redirect: 'manual' })
   assert.equal(s.status, 302); const loc = new URL(s.res.headers.get('location'))

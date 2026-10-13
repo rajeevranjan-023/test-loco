@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// One physical seat. Its colour on the grid is NEVER stored — it is computed from the seat's active SeatAssignments
-// (utils/studyLogic.js#seatState), so it cannot drift out of sync with who actually sits there.
 const seatSchema = new mongoose.Schema(
   {
     centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'StudyCenter', required: true, index: true },

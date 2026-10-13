@@ -1,9 +1,6 @@
 import mongoose from 'mongoose'
 import { billingConfigField } from './billingConfigSchema.js'
 
-// A Study Center / Library account. Same role as Shop / ServiceProvider: one account document per owner, keyed by
-// userId, and every shared engine (billing, customers, udhar ledger, bill ids) is scoped by this document's _id.
-// Everything that differs between two centres — seats, naming, zones, time slots, plans, fees, rules — is DATA in `config`.
 const sub = (shape) => new mongoose.Schema(shape, { _id: false })
 
 const studyCenterSchema = new mongoose.Schema(

@@ -11,7 +11,6 @@ const shopOnly = (req, res) => {
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // GET /api/seller/inventory/search?q=&limit=      (limit is capped at 10)
-// Name or product ID. Fewer than 2 characters → nothing is searched (and nothing hits the database).
 export const searchProducts = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const q = String(req.query.q || '').trim().slice(0, 40)
@@ -41,7 +40,6 @@ export const searchProducts = asyncHandler(async (req, res) => {
 })
 
 // POST /api/seller/products/:productId/stock   { quantity, costPrice?, note? }
-// Restock = a NEW batch. Older batches (and their cost prices) are never touched or merged.
 export const addStock = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const quantity = Number(req.body.quantity)
@@ -84,8 +82,6 @@ export const getProductHistory = asyncHandler(async (req, res) => {
 })
 
 // PATCH /api/seller/products/:productId/batches/:batchId   { costPrice?, quantity?, recalculate? }
-// History edit. Bills are never rewritten. Past sales keep the cost they were billed with — unless
-// `recalculate: true`, which re-prices the sales that drew from this batch so profit uses the corrected cost.
 export const editBatch = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const { costPrice, quantity } = req.body
@@ -113,9 +109,6 @@ export const editBatch = asyncHandler(async (req, res) => {
 
 // ---------------------------------------------------------------------------------------------------
 // POST /api/seller/inventory/add   { name, stock, unit: 'kg'|'liter'|'unit', costPrice, sellingPrice, imageUrl? }
-// The "keep adding" form. New name → new product (+ product ID A001…, + first batch).
-// Same name (case-insensitive) → NOTHING is overwritten: a new batch with its own cost is added and the latest
-// selling price becomes the live one. Returns { created, product, batch, message }.
 const UNITS = { kg: 'kg', kgs: 'kg', liter: 'liter', litre: 'liter', l: 'liter', ltr: 'liter', unit: 'unit', units: 'unit', pcs: 'unit', pc: 'unit' }
 const cleanName = (x) => String(x || '').replace(/\s+/g, ' ').trim().slice(0, 80)
 const numOrNaN = (v) => (v === '' || v === null || v === undefined || typeof v === 'object' ? NaN : Number(v))

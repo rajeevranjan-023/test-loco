@@ -1,5 +1,3 @@
-// Universal Billing phase 2 — discounts, tax, charge modes, split payments, customer-safe document, drafts, analytics.
-//   MONGODB_URI=mongodb://127.0.0.1:27018/bill2 node tests/billing2.int.test.js
 import assert from 'node:assert/strict'
 process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'test-secret'
 const { default: app } = await import('../server.js')

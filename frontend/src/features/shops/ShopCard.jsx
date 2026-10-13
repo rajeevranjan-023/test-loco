@@ -3,10 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import StarRating from '../../components/StarRating.jsx'
 import { profilePath } from '../../utils/username.js'
 
-// `shop` matches the backend's Shop.toPublicProfile() shape:
-// { id, username, name, category, description, phone, location, timing, rating, reviewCount }
-// `distanceKm` is computed client-side (see utils/geo.js) and passed in
-// separately since the backend doesn't calculate it.
 function ShopCard({ shop, distanceKm }) {
   const navigate = useNavigate()
   const { username, name, category, location, rating, reviewCount } = shop

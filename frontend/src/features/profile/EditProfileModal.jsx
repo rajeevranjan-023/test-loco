@@ -8,9 +8,6 @@ import { validateName, validateEmail, validatePhone, validateUsername, validateB
 
 const AVAILABILITY_OPTIONS = ['Available Today', 'Busy Today', 'Not Available']
 
-// Owner-only "pencil" edit for a shop/service profile — covers both
-// account-level settings (name, username, email, phone, bio, avatar) and
-// listing-level fields (banner, description, availability, pricing).
 function EditProfileModal({ profile, onClose, onSaved, onError }) {
   const { user, updateUser } = useAuth()
   const isShop = profile.type === 'shop'

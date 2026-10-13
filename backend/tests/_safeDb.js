@@ -1,5 +1,3 @@
-// Destructive tests (they call dropDatabase()) may only ever run against a local, disposable MongoDB.
-// This exists because `import 'dotenv/config'` + a fallback URI could silently pick up the real MONGODB_URI from .env.
 export function assertDisposableDb(uri, who = 'test') {
   const u = String(uri || '')
   const local = /^mongodb:\/\/(?:[^@/]*@)?(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?(\/|\?|$)/i.test(u)

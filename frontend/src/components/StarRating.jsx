@@ -1,7 +1,6 @@
 import React from 'react'
 import { formatRating } from '../utils/format.js'
 
-// Renders a compact star rating, e.g. ★★★★☆ 4.5 (312)
 function StarRating({ rating, reviews, size = 'md', showValue = true }) {
   const full = Math.round(rating)
   return (

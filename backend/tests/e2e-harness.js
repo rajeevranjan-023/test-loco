@@ -1,6 +1,3 @@
-// Local E2E harness (NOT used in production): real API + a Mongo-compatible DB, with ONLY Google's hosted account-chooser
-// replaced by a stand-in page at /__fake_google. State/CSRF cookie/nonce/ticket/registration/OTP all run the real code.
-//   MONGODB_URI=mongodb://127.0.0.1:27018/loco_e2e node tests/e2e-harness.js
 import express from 'express'
 process.env.NODE_ENV = 'test'; process.env.JWT_SECRET = 'e2e-secret'; process.env.OTP_DEV_FIXED = 'true'
 process.env.CLIENT_ORIGIN = 'http://localhost:5173'; process.env.GOOGLE_CLIENT_ID = 'fake'; process.env.GOOGLE_CLIENT_SECRET = 'fake'

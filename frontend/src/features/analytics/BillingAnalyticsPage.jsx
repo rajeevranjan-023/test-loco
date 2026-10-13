@@ -4,9 +4,6 @@ import { useSeller, PageHead, State } from './kit.jsx'
 import { Card } from './ui.jsx'
 import { useBusiness } from '../../context/BusinessContext.jsx'
 
-// Analytics for non-shop businesses that bill through the universal engine (Service Providers).
-// Everything shown comes from GET /api/seller/billing/summary (the server's own billing numbers) — nothing is recomputed here,
-// and which cards/charts appear follows the business schema (billing item types, capabilities, terms).
 const money = (v) => `₹${Math.round(v || 0).toLocaleString('en-IN')}`
 const COLORS = { product: '#2563EB', material: '#0EA5E9', service: '#F97316', labour: '#16A34A', other: '#7C3AED' }
 const TONE = { blue: 'text-[#2F6FEB]', green: 'text-[#12A05C]', red: 'text-[#D92D20]', orange: 'text-[#E58A00]', gray: 'text-gray-900' }
@@ -18,7 +15,6 @@ export default function BillingAnalyticsPage() {
   const { business, t, cap } = useBusiness()
   const q = useSeller(`/api/seller/billing/summary?days=${days}`); const d = q.data
   const label = (k) => business.billing?.labels?.[k] || { product: 'Products / Parts', material: 'Materials', service: 'Services', labour: 'Labour', other: 'Other' }[k] || k
-  // kinds this business can bill (schema) that actually have revenue in the period
   const kinds = Object.keys(COLORS).filter((k) => (d?.revenue?.[k] || 0) > 0)
   const kpis = d && [
     { key: 'rev', label: 'Revenue (excl. tax)', v: money(d.totalRevenue), tone: 'blue' },

@@ -14,10 +14,6 @@ function fileFilter(req, file, cb) {
   cb(null, true)
 }
 
-// The multer-level limit has to be a single ceiling (the field's exact
-// type isn't known until the file arrives), so we allow up to the video
-// max here and enforce the tighter 5MB image limit ourselves in the
-// controller once we know `file.mimetype`.
 export const upload = multer({
   storage,
   fileFilter,

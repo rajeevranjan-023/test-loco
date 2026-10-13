@@ -1,7 +1,5 @@
 import { api } from './api.js'
 
-// The registration token is an opaque secret issued by the backend. It lives in sessionStorage only so a page refresh
-// doesn't lose progress; it proves nothing by itself — every step is re-validated on the server.
 const KEY = 'lf_reg_token'
 export const regToken = {
   get: () => { try { return sessionStorage.getItem(KEY) || '' } catch { return '' } },

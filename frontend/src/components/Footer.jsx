@@ -12,7 +12,6 @@ function StoreBadge({ top, name }) {
   return <button type="button" className="rounded-lg border border-gray-600 bg-black px-3 py-1.5 text-left leading-tight text-white"><span className="block text-[8px] uppercase text-gray-300">{top}</span><span className="text-sm font-semibold">{name}</span></button>
 }
 
-// Dark site footer (matches the shop-profile design).
 export default function Footer() {
   return (
     <footer className="mt-8 bg-[#0b1220] text-gray-300">

@@ -11,8 +11,6 @@ import { whyLoco } from '../features/home/config.js'
 import { useHome } from '../hooks/useHome.js'
 import { profilePath } from '../utils/username.js'
 
-// Section layout only (titles / which side the promo sits on). All listings, promos, categories and cities
-// come from the database via GET /api/home. Promo side alternates right → left → right.
 const ROWS = [
   { key: 'shops', icon: '🏪', title: 'Popular Shops Near You', subtitle: 'Verified local shops in your area', emptyLabel: 'shops', searchQuery: 'Shop', promoSide: 'right' },
   { key: 'services', icon: '🔧', title: 'Popular Services Near You', subtitle: 'Find trusted service providers', emptyLabel: 'services', searchQuery: 'Services', promoSide: 'left' },

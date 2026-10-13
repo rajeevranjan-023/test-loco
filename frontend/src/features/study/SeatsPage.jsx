@@ -6,9 +6,6 @@ import { Avatar } from '../analytics/udhar/parts.jsx'
 import { useOwnerNavigate } from '../../hooks/useOwnerPath.jsx'
 import { inr, dt, slotText, DueStack, DueInline, SeatDot, Select, AddSeats, AddToList, useStudyConfig } from './shared.jsx'
 
-// Seat colours come from the SERVER (seat.state, computed from active seat assignments only):
-//   green = fully occupied · orange = partially occupied · red = empty · gray = unavailable.
-// An expired membership or an unpaid due never changes a seat's colour — the due is simply shown in red on the tile.
 const TILE = { occupied: 'border-[#9AE6B4] bg-[#C6F6D5]/70 text-gray-900', partial: 'border-[#F6D58B] bg-[#FDE9B6]/80 text-gray-900', empty: 'border-[#F5B5B5] bg-[#FCD5D5]/80 text-gray-900', unavailable: 'border-gray-200 bg-gray-200/80 text-gray-500' }
 const STATE_LABEL = { occupied: 'Occupied', partial: 'Partially Occupied', empty: 'Empty', unavailable: 'Unavailable' }
 const PILL = { occupied: 'bg-[#E3F7EC] text-[#12A05C]', partial: 'bg-[#FFF1DC] text-[#E58A00]', empty: 'bg-[#FDE8E8] text-[#D92D20]', unavailable: 'bg-gray-100 text-gray-500' }

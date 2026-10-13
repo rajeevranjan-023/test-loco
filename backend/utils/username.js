@@ -1,17 +1,3 @@
-// Username rules for Loco / Servop
-// Display: @username
-// Storage: @username
-// Route: /:username
-//
-// Rules:
-// - Length: 5–20 characters
-// - Allowed: a-z, A-Z, 0-9, period (.) and underscore (_)
-// - Must start and end with a letter or number
-// - Consecutive periods (..) are not allowed
-// - Spaces and @ inside the username are not allowed
-// - At least one number is required
-// - Username comparison is case-insensitive
-// - Numeric patterns such as 123, 786, 999 and 100 are allowed
 
 export const USERNAME_REGEX =
   /^(?=.{5,20}$)(?=.*\d)[a-zA-Z0-9](?:[a-zA-Z0-9._]*[a-zA-Z0-9])$/;

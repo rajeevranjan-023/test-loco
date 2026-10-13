@@ -3,18 +3,6 @@ import Product from '../models/Product.js'
 import Counter from '../models/Counter.js'
 
 // =====================================================================================================
-//  Batch / FIFO stock engine
-//
-//  A product's stock is a list of batches (one per purchase), each with its own cost price:
-//      batches: [{ quantity, remainingQty, costPrice, addedAt, exhausted, … }]
-//  • Restocking ALWAYS pushes a new batch — cost prices are never merged or overwritten.
-//  • Selling drains the OLDEST batch first, then the next one, and returns a cost breakdown
-//      [{ batchId, qty, costPrice }]  which is stored on the Sale line.
-//  • product.stock (= "totalStock") is always the sum of batches[].remainingQty.
-//
-//  Everything above `withProduct` is pure (works on any object with `batches`/`stock`) so it is unit-tested
-//  without a database.
-// =====================================================================================================
 
 export const r3 = (n) => Math.round(n * 1000) / 1000 // kg quantities: 3 decimals avoids float drift
 const EPS = 0.0005
@@ -105,7 +93,6 @@ export function writeOffFIFO(p, qty) {
 }
 
 // Put sold quantity back (cancelled order / reduced quantity) into the batches it came from.
-// If a batch no longer exists (or the sale predates batches) it comes back as a "return" batch at the same cost.
 export function restoreToBatches(p, breakdown, fallbackDate = new Date()) {
   if (!isTracked(p)) return
   for (const piece of breakdown || []) {
@@ -149,7 +136,6 @@ export function trimBreakdown(breakdown, qty) {
 }
 
 // History edit: fix an old batch's cost and/or total quantity. Past sales keep their snapshot unless the
-// caller re-prices them (see inventoryController). Quantity can't drop below what already left the batch.
 export function applyBatchEdit(p, batchId, { costPrice, quantity }, { recalculated = false } = {}) {
   const b = (p.batches || []).find((x) => sameId(x._id, batchId))
   if (!b) throw new StockError('Batch not found.')
@@ -183,10 +169,6 @@ export async function nextProductCode(shopId) {
   return codeFor(c.seq)
 }
 
-// ---------------------------------------------------------------------------------------------------
-//  DB helper — read → mutate → save with optimistic concurrency, retrying if someone else wrote first.
-//  `mutate` must only change the document it is given (it may run more than once).
-//  Returns whatever `mutate` returns, or the saved product when it returns nothing; null if the product doesn't exist.
 // ---------------------------------------------------------------------------------------------------
 export async function withProduct(filter, mutate, retries = 8) {
   for (let i = 0; ; i++) {

@@ -39,10 +39,6 @@ const userSchema = new mongoose.Schema(
       lng: { type: Number, default: null },
       updatedAt: { type: Date, default: null },
     },
-    // What this user follows — a shop or service-provider profile.
-    // (Kept here rather than as a separate collection since a single
-    // user's "following" list is small and read together with their
-    // account most of the time.)
     following: [
       {
         _id: false,

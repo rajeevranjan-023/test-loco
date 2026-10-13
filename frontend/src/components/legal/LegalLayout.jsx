@@ -1,15 +1,6 @@
 import React from 'react'
 import '../../css/Legal.css'
 
-/**
- * Shared layout for long-form legal documents (Privacy Policy, Terms & Conditions).
- * Takes a `sections` array of { id, title, body } and renders a sticky
- * table of contents alongside the full document.
- *
- * `body` can be a string (rendered as a single paragraph) or an array of
- * strings / list items — pass an object { type: 'list', items: [...] } for
- * bullet lists within a section.
- */
 function LegalLayout({ lastUpdated, sections }) {
   const renderPiece = (piece, key) => {
     if (typeof piece === 'string') {

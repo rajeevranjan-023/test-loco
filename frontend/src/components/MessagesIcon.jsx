@@ -4,8 +4,6 @@ import { api } from '../services/api.js'
 import { useApiData } from '../hooks/useApiData.js'
 import { useAuth } from '../context/AuthContext.jsx'
 
-// Small header icon linking to /requirements (the "Messages/Requests" section),
-// with a live badge showing how many open items are waiting.
 function MessagesIcon() {
   const { isAuthenticated, isSeller } = useAuth()
 

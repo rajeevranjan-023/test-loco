@@ -3,12 +3,6 @@ import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom
 import { useAuth } from '../context/AuthContext.jsx'
 import { setViewAs } from '../services/api.js'
 import { looksLikeUsername, usernameMatches, profilePath, stripAt } from '../utils/username.js'
-
-// Single source of truth for "who is looking at /:username?"
-//   isOwner   – logged-in user's username === URL username   (can edit this profile)
-//   isAdmin   – platform admin                               (can open every username's pages)
-//   canManage – owner (seller) or admin                      (may see the management navigation + pages)
-//   viewer    – everyone else, including logged-out users    (public profile only)
 export function useAccess() {
   const { username } = useParams()
   const { user, isAuthenticated, isSeller, isAdmin, loading } = useAuth()
@@ -17,8 +11,6 @@ export function useAccess() {
   return { username, loading, isOwner, isAdmin, canManage, isViewer: !loading && !canManage }
 }
 
-// Wraps every /:username/* route. Step 1: validate the username BEFORE anything is fetched.
-// Step 2: when an admin is looking at someone else's pages, tell the API who to act as.
 export function UsernameShell() {
   const { username } = useParams()
   const { isAdmin, isOwner } = useAccess()
@@ -44,8 +36,6 @@ export function UsernameShell() {
   return <Outlet />
 }
 
-// Guard for every management page (/:username/dashboard, /udhar, /billing …).
-// Owner and admin pass; a viewer (or logged-out user) is sent back to the public profile /:username.
 export function OwnerOnly({ children }) {
   const { username, loading, canManage } = useAccess()
   if (loading) return <div className="detail-empty">Loading...</div>

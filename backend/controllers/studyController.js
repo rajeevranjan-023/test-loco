@@ -27,7 +27,6 @@ const findMember = (req, id, lean = false) => { const q = mongoose.isValidObject
 const slugKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)
 
 // ───────────────────────── configuration lists (zones · seat types · time slots · plans · charge types · materials) ─────────────────────────
-// ONE generic endpoint family, so "Add Seat Zone", "Add Time Slot", "Add Membership Plan" … are all the same code with a different cleaner.
 const LISTS = {
   zones: (b) => { const name = String(b.name || '').trim().slice(0, 30); return name ? { key: slugKey(b.key || name), name } : { error: 'Zone name is required.' } },
   seatTypes: (b) => { const name = String(b.name || '').trim().slice(0, 30); return name ? { key: slugKey(b.key || name), name } : { error: 'Seat type name is required.' } },
@@ -318,8 +317,6 @@ export const billingCatalog = asyncHandler(async (req, res) => {
 })
 
 // ───────────────────────── member self-service (consumer account) ─────────────────────────
-// A Loco user whose account is linked to a Member record (by userId, or by the same mobile number) can ask to leave.
-// Nothing is deleted or released automatically: the request is flagged and the centre owner confirms with "Release Seat".
 const myMembers = async (user, centerId = null) => {
   const or = [{ userId: user._id }, ...(user.phone && PHONE_RE.test(String(user.phone).replace(/\D/g, '').slice(-10)) ? [{ phone: String(user.phone).replace(/\D/g, '').slice(-10) }] : [])]
   return StudyMember.find({ $or: or, ...(centerId ? { centerId } : {}) }).lean()

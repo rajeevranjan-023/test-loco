@@ -1,5 +1,3 @@
-// Logout revocation (no database): a logged-out token is refused by protect / optionalAuth; other tokens of the same user are not.
-// The Mongoose models are stubbed in memory; the REAL middleware and controller code runs.
 import assert from 'node:assert/strict'
 process.env.JWT_SECRET = 'test-secret'
 const { default: jwt } = await import('jsonwebtoken')

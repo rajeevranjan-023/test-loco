@@ -1,8 +1,6 @@
 import React from 'react'
 import Img from '../../../components/Img.jsx'
 
-// Universal listing card. Fills its grid cell; same height/padding/radius everywhere.
-// `rating` is null until a listing has real reviews — then "New" is shown instead of a made-up number.
 function Card({ item, onCall, onWhatsApp, onView }) {
   return (
     <article className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100 transition hover:shadow-md">

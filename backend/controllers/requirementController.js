@@ -25,8 +25,6 @@ export const createRequirement = asyncHandler(async (req, res) => {
     imageUrl: imageUrl || '',
   })
 
-  // Count how many sellers/providers this requirement is now visible to,
-  // so the buyer gets useful confirmation feedback.
   const categoryRegex = new RegExp(`^${category}$`, 'i')
   const [shopMatches, serviceMatches] = await Promise.all([
     Shop.countDocuments({ category: categoryRegex }),
@@ -50,8 +48,6 @@ export const listMyRequirements = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/requirements/inbox  (protected, seller only)
-// Returns requirements whose category matches this seller's shop category
-// (shop accounts) or work type (service accounts) — an inbox, not a firehose.
 export const listInboxRequirements = asyncHandler(async (req, res) => {
   const matchValue = req.sellerType === 'shop' ? req.sellerAccount.category : req.sellerAccount.workType
   const categoryRegex = new RegExp(`^${matchValue}$`, 'i')

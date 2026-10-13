@@ -2,13 +2,6 @@ import React, { useRef } from 'react'
 
 const MAX_SIZE_MB = 2
 
-/**
- * A single optional photo upload with preview. Since this project has no
- * cloud storage configured, the image is read as a base64 data URL on the
- * client and sent to the backend as a plain string — fine for occasional
- * small photos, but swap this for real object storage (S3/Cloudinary) if
- * volume grows.
- */
 function ImageUploadField({ label = 'Upload photo (optional)', value, onChange, maxSizeMb = MAX_SIZE_MB }) {
   const inputRef = useRef(null)
 

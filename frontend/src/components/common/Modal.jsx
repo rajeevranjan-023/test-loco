@@ -1,10 +1,6 @@
 import React, { useEffect } from 'react'
 import '../../css/Modal.css'
 
-/**
- * Generic modal dialog. Pass `footer` for custom action buttons (typically
- * Save/Cancel) — if omitted, a default Cancel button is shown.
- */
 function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   useEffect(() => {
     if (!open) return

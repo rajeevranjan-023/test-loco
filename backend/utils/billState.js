@@ -1,13 +1,7 @@
 import { r2, EPS } from './ledger.js'
 
-// Paid / Udhar / Advance for a bill, given how much of its udhar is still outstanding.
 export const billStateOf = (bill, remaining) => (bill.advanceAdded > 0 ? 'Advance' : remaining > EPS ? 'Udhar' : 'Paid')
 
-// How much of the customer's CURRENT udhar belongs to each bill.
-// Payments clear the oldest udhar first, so what is still owed sits on the newest bills:
-// walk bills newest → oldest and hand each its unpaid amount until the customer's balance is used up.
-// Bills whose unpaid part was never put on the ledger keep their own unpaid amount.
-//   bills: [{ billId, unpaidAmount, createdAt }]   ledgerBillIds: Set of billIds that have a billing 'udhar' entry
 export function allocateRemaining(bills, ledgerBillIds, currentBalance) {
   const out = {}
   let pool = Math.max(currentBalance || 0, 0)

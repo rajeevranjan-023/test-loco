@@ -33,9 +33,8 @@ const app = express()
 if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY) // needed behind Render/NGINX so rate limits see the real client IP
 
 app.use(corsMiddleware())
-app.use(requestId) // every response carries X-Request-Id; error bodies and server log lines share it
+app.use(requestId) 
 app.use(express.json())
-// Anything answered to an authenticated request is private: never let a browser/proxy cache reuse it for another account.
 app.use('/api', (req, res, next) => { if (req.headers.authorization) { res.set('Cache-Control', 'no-store'); res.vary('Authorization') } next() })
 if (process.env.NODE_ENV !== 'test') {
   morgan.token('safe-url', (req) => redactUrl(req.originalUrl)) // never log OAuth code/state, reset tokens … from the query string
@@ -44,7 +43,6 @@ if (process.env.NODE_ENV !== 'test') {
 // _________________________________________________________________________
 // =========================================================================
 // Health. /api/health/live = "the process is up" (always 200 — use for restart-on-failure probes).
-// /api/health and /api/health/ready = "can this instance serve traffic" — 503 while the required database is not connected.
 app.get('/api/health/live', (req, res) => res.set('Cache-Control', 'no-store').json({ status: 'ok' }))
 const readiness = (req, res) => {
   res.set('Cache-Control', 'no-store')
@@ -54,8 +52,8 @@ const readiness = (req, res) => {
 app.get('/api/health', readiness)
 app.get('/api/health/ready', readiness)
 
-app.use('/api', requestTimeout())  // bounded wait for the client (see middleware/requestTimeout.js)
-app.use('/api', requireDatabase)   // database down → immediate 503 instead of a queued query that times out
+app.use('/api', requestTimeout()) 
+app.use('/api', requireDatabase)  
 
 import listingRoutes from './routes/listingRoutes.js'
 app.use('/api', listingRoutes)
@@ -109,12 +107,11 @@ const PORT = process.env.PORT || 5000
 async function start() {
   installProcessHandlers()
   warnProductionConfig()
-  assertOtpConfig() // refuses to boot if the fixed dev OTP is enabled in production, or production has no SMS provider
+  assertOtpConfig() 
   console.log(`[otp] mode: ${otpMode()}`)
   await connectDB()
   await ensureBillIndexes().catch((e) => logger.error('bill-index', `failed: ${e.message}`))
   await migrateLedger().catch((e) => logger.error('ledger-migrate', `failed: ${e.message}`))
-  // Dev seed data is OPT-IN (AUTO_SEED=true) and never runs in production (seed/guard.js). An empty database stays empty.
   if (autoSeedBlockedReason()) console.warn(`[auto-seed] ${autoSeedBlockedReason()}`)
   if (autoSeedEnabled()) {
     await seedIfMissing().catch((e) => logger.error('auto-seed', `failed: ${e.message}`))

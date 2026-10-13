@@ -1,13 +1,3 @@
-// The ONE place that knows "who is logged in on this tab".
-//
-//  • token      — kept in memory AND in localStorage (`lf_token`, the existing storage). Every request reads the in-memory copy, so
-//                 a tab keeps talking as the account it is SHOWING until it deliberately switches (another tab logging in as someone
-//                 else can no longer make this tab show user A while its requests carry user B's token).
-//  • epoch      — a counter that goes up every time the identity changes (login as someone else, logout, a session that turns out to
-//                 be invalid, another tab switching account). It is the "request identity": in-flight authenticated requests are
-//                 aborted when it changes, and their late answers are dropped, so a response meant for user A can never be
-//                 written into user B's screen.
-//  • resetters  — anything holding account-specific data outside React state registers a reset here.
 const KEY = 'lf_token'
 const read = () => { try { return localStorage.getItem(KEY) || null } catch { return null } }
 

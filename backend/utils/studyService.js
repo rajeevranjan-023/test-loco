@@ -1,6 +1,3 @@
-// Study Center service layer — the database side of utils/studyLogic.js.
-// Controllers (studyController.js) and the billing hook (businessHooks.js) both go through here, so the rules
-// (slot conflicts · expiry never frees a seat · history is never deleted) live in exactly one place.
 import mongoose from 'mongoose'
 import Customer from '../models/Customer.js'
 import Udhar from '../models/Udhar.js'
@@ -15,8 +12,6 @@ const oid = (x) => (x && x._id ? x._id : x)
 const fail = (status, message) => Object.assign(new Error(message), { status, expose: true }) // expose → errorHandler returns this message + status to the client
 export const windowOf = (center) => ({ open: center?.config?.operatingHours?.open || DEFAULT_WINDOW.open, close: center?.config?.operatingHours?.close || DEFAULT_WINDOW.close })
 
-// ───────── members ─────────
-// STU001, STU002 … per centre. Atomic counter on the centre document.
 export async function nextMemberCode(center) {
   const c = await StudyCenter.findOneAndUpdate({ _id: center._id }, { $inc: { 'config.memberCounter': 1 } }, { new: true }).select('config.memberCounter config.memberPrefix').lean()
   return `${c?.config?.memberPrefix || 'STU'}${String(c?.config?.memberCounter || 1).padStart(3, '0')}`
@@ -126,8 +121,6 @@ export async function releaseAssignment(center, assignmentId, { by = 'owner', no
 }
 
 // ───────── memberships ─────────
-// New membership OR renewal. A renewal is a NEW row (history kept) that starts where the previous period ends (or today if it already lapsed).
-// The seat assignment is kept when the renewal doesn't ask for a different seat / slot.
 export async function createMembership(center, { member, plan, rate = null, discount = 0, billId = null, paid = 0, pending = 0, seatId = null, slot = null, renewsId = null, startDate = null, now = new Date() }) {
   const months = Math.max(Math.floor(Number(plan.months)), 1)
   let prev = null

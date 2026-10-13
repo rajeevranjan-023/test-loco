@@ -6,16 +6,12 @@ import { findAccountByUser } from '../utils/accounts.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { normalizeUsername } from '../utils/username.js'
 
-// Identity of a logged-out token (its hash — works for every token ever issued, no change to how tokens are made).
 export const tokenHash = (token) => crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 40)
 export const isRevoked = async (token) => !!(await RevokedToken.exists({ hash: tokenHash(token) }))
 
 // _________________________________________________________________________________
 // =================================================================================
 
-// Only a token problem (missing / forged / expired / logged out / user deleted) is a 401. Anything else that goes wrong while
-// checking the token — the database being unreachable above all — is NOT "your session expired": it is rethrown so the central
-// error handler answers 503. (It used to answer 401 for everything, which made the frontend log users out during a DB outage.)
 const requireJwtSecret = () => { if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured') } // misconfiguration → logged 500, not a silent 401 for everyone
 const findUser = async (id) => {
   try { return await User.findById(id) } catch (e) { if (e?.name === 'CastError') return null; throw e } // a malformed id inside a token = no such user
@@ -49,9 +45,6 @@ export const protect = asyncHandler(async (req, res, next) => {   // is user log
 // _________________________________________________________________________________
 // =================================================================================
 
-// Like `protect`, but doesn't reject the request if there's no/invalid token —
-// it just leaves req.user undefined. Used for public endpoints (like posting a
-// requirement) that still want to attach the logged-in user when there is one.
 export const optionalAuth = asyncHandler(async (req, res, next) => {
   const header = req.headers.authorization
   if (!header || !header.startsWith('Bearer ')) {
@@ -75,8 +68,6 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
 // =================================================================================
 
 export const requireSeller = asyncHandler(async (req, res, next) => {     //is user a seller or not
-  // Admins may act on any seller's dashboard by sending `x-view-as: <username>` (the frontend does this
-  // automatically on /:username/* pages). The header is IGNORED for every non-admin user.
   let owner = req.user
   if (req.user.role === 'admin') {
     const viewAs = normalizeUsername(req.headers['x-view-as'])
@@ -104,9 +95,6 @@ export const requireSeller = asyncHandler(async (req, res, next) => {     //is u
 // _________________________________________________________________________________
 // =================================================================================
 
-// Owner guard for any route that carries a username in the URL (e.g. /api/.../:username/...).
-// Run AFTER `protect`. Logged-in user's username must equal the route username, otherwise 403 —
-// so a visitor can never reach owner-only data just by editing the URL.
 export const requireOwner = (param = 'username') => (req, res, next) => {
   if (req.user?.role === 'admin') return next() // admin may open any username's pages
   const target = normalizeUsername(req.params[param])
@@ -116,8 +104,6 @@ export const requireOwner = (param = 'username') => (req, res, next) => {
   next()
 }
 
-// Route guard for a business module (e.g. the study-centre seat/member APIs): allowed only when this account's business
-// schema has that capability switched on. Keyed on capabilities from the schema — never on a name or id.
 import { capabilitiesOf } from '../utils/businessSchema.js'
 export const requireCapability = (cap) => (req, res, next) => {
   if (!capabilitiesOf(req.sellerType, req.sellerAccount)[cap]) return res.status(403).json({ message: 'This feature is not available for your business type.' })

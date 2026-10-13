@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// One row per (purpose, subject). Owned by utils/otp.js — nothing else should read or write it.
-// The code itself is never stored: only an HMAC of it. Rows disappear on their own after `expiresAt`.
 const otpChallengeSchema = new mongoose.Schema(
   {
     purpose: { type: String, required: true },          // e.g. 'registration'

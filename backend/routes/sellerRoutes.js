@@ -13,12 +13,8 @@ router.get('/me', protect, getMySellerAccount)
 router.patch('/account', protect, updateSellerAccount)
 router.get('/check-username/:username', protect, checkUsernameAvailability)
 
-// Everything ABOVE this line (start / me / account / check-username) must be
-// reachable by non-sellers — they need /start to BECOME sellers. Everything
-// BELOW requires an existing seller account.
 router.use(protect, requireSeller)
 
-// Owner check for /:username/* dashboard URLs — 200 for the owner, 403 for everyone else.
 router.get('/owner/:username', requireOwner(), (req, res) => res.json({ isOwner: true }))
 
 import studyRoutes from './studyRoutes.js'
@@ -35,7 +31,6 @@ router.post('/products', createProduct)
 router.put('/products/:productId', updateProduct)
 router.delete('/products/:productId', deleteProduct)
 
-// Inventory: search, batch-wise restock, cost history
 import { searchProducts, addStock, getProductHistory, editBatch, addInventoryProduct } from '../controllers/inventoryController.js'
 router.get('/inventory/search', searchProducts)
 router.post('/inventory/add', addInventoryProduct)
@@ -51,13 +46,9 @@ router.put('/sales/:saleId', updateSale)
 router.get('/bills', listBills)
 
 // _________________________________________________________________________
-// LEGACY (kept for backward compatibility): only called by features/seller/AnalyticsPanel.jsx (not mounted by the router) and asserted by
-// billing.int / billing2.int / smoke tests. Current screens use /insights (shop), /billing/summary (service) and /study/analytics.
 import { getAnalytics } from '../controllers/analyticsController.js'
 router.get('/analytics', getAnalytics)
 
-// Full SaaS-style dashboard payload (KPIs, charts, tables) for /analytics page
-// LEGACY: no caller in frontend/src, frontend tests or backend tests (traced). Kept because external/older clients cannot be ruled out.
 import { getDashboard } from '../controllers/dashboardController.js'
 router.get('/dashboard', getDashboard)
 import { getInsights } from '../controllers/insightsController.js'
@@ -83,7 +74,6 @@ router.get('/billing/bills/:billId/document', billDocument)
 router.get('/billing/recent', recentBills)
 router.get('/billing/bills/:billId', billDetail)
 
-// Udhar notebook (ledger): overview, manual add/payment, per-customer history, entry detail, pinning
 import { overview as udharOverview, addEntry as udharAdd, customerHistory, entryDetail, setPinned } from '../controllers/udharController.js'
 router.get('/udhar/overview', udharOverview)
 router.post('/udhar/entries', udharAdd)
@@ -91,7 +81,6 @@ router.get('/udhar/entries/:entryId', entryDetail)
 router.get('/udhar/customers/:id/history', customerHistory)
 router.patch('/udhar/customers/:id/pin', setPinned)
 
-// Seller panel pages: shell summary, orders, customers, offers, messages
 import { getSummary, listOffers, createOffer, updateOffer, deleteOffer, listConversations, getThread, sendMessage } from '../controllers/panelController.js'
 router.get('/summary', getSummary)
 import { listOrders, getOrder, updateOrderStatus, editOrder, deleteOrder, addOrderPayment } from '../controllers/ordersController.js'

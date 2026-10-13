@@ -151,9 +151,6 @@ export const recordSale = asyncHandler(async (req, res) => {
   const standing = cust ? await Udhar.findOne({ shopId, customerId: cust._id }).select('totalAmount').lean() : null
 
   // ---- Work out the settlement ----
-  // 1) Advance Balance is auto-deducted first. 2) What the customer actually pays is compared with what is still due.
-  // The seller chooses the advance explicitly (billing screen "−₹…" → advanceToUse) and the money collected against old udhar (oldUdharPaid); the server applies
-  // exactly that, capped by what is really held / owed — utils/settlement.js is the single piece of arithmetic (older clients keep the automatic advance).
   const st = computeSettlement({
     totalAmount, hasCustomer: !!cust, balance: standing?.totalAmount ?? 0, useCredit: req.body.useCredit,
     advanceAsked: req.body.advanceToUse == null ? null : Number(req.body.advanceToUse) || 0, oldAsked: req.body.oldUdharPaid,
@@ -182,8 +179,6 @@ export const recordSale = asyncHandler(async (req, res) => {
 
   const { billId, fullId } = await generateBillId(account)
 
-  // ---- Everything from here on is all-or-nothing. Stock is taken OLDEST BATCH FIRST (FIFO); each product/material
-  //      line stores the batches it used, and costAtSale/cost is their weighted average, so profit is batch-exact. ----
   const created = []   // Sale rows (product lines only — keeps existing product analytics exact)
   const consumed = []  // so a failure half-way can put everything back
   let bill = null, ledgerTouched = false
@@ -283,11 +278,6 @@ export const recordSale = asyncHandler(async (req, res) => {
 
 // _________________________________________________________________________
 // =========================================================================
-// PUT /api/seller/sales/:saleId  (protected) - edit a logged bill line item.
-// Only quantity, channel and customerName are editable; changing quantity
-// adjusts the product's stock by the difference so stock stays accurate.
-// Note: this does not recompute the parent Bill's totals/payment status —
-// edit the bill's payment separately via the Udhar/credit tools if needed.
 export const updateSale = asyncHandler(async (req, res) => {
   const sale = await Sale.findOne({ _id: req.params.saleId, shopId: req.sellerAccount._id })
   if (!sale) {
@@ -321,7 +311,6 @@ export const updateSale = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/seller/sales  (protected, shop sellers only)
-// Flat line items — the frontend groups them by billId to render as bills.
 export const listSales = asyncHandler(async (req, res) => {
   if (!req.sellerAccount) {
     return res.status(403).json({ message: 'Only shop accounts have sales.' })
@@ -336,8 +325,6 @@ export const listSales = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/seller/bills  (protected, shop sellers only)
-// One summary doc per bill — payment status/totals for the Sales tab to
-// merge with the grouped line items from listSales.
 export const listBills = asyncHandler(async (req, res) => {
   if (!req.sellerAccount) {
     return res.status(403).json({ message: 'Only shop accounts have bills.' })

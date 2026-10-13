@@ -13,7 +13,6 @@ import { iconOf } from '../../components/ownerIcons.js'
 import { RouteErrorBoundary } from '../../components/ErrorBoundary.jsx'
 
 // ONE page width/padding for the whole owner area — header, every page (profile included) and footer use it,
-// so switching tabs never shifts the content sideways.
 export const PAGE = 'mx-auto w-full max-w-[1320px] px-4 sm:px-6'
 
 // The seller shell wraps every /:username/<dashboard|billing|udhar|analytics|inventory|customer|add|…> page.

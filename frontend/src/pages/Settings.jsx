@@ -9,10 +9,6 @@ import FeedbackBanner from '../components/FeedbackBanner.jsx'
 import '../css/Settings.css'
 import { profilePath } from '../utils/username.js'
 
-// Instagram-style Settings page, opened by clicking the SERVOP logo.
-// Every logged-in user (consumer or seller) can edit their own account
-// here; becoming a seller and logging out live here too, which keeps the
-// header itself uncluttered.
 function Settings() {
   useTitle('Settings')
   const { user, isAuthenticated, isSeller, logout } = useAuth()

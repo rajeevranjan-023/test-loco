@@ -1,8 +1,5 @@
 import React from 'react'
 
-// A single number input plus a unit dropdown (kg / unit) rendered as one
-// combined control — used for both Price and Cost Price on the product
-// form, per spec: "user only enters number, unit handled via dropdown".
 function PriceInput({ label, amount, unit, onAmountChange, onUnitChange }) {
   return (
     <label className="price-input-field">

@@ -6,9 +6,6 @@ import { loginUrl, signupUrl } from '../../utils/redirect.js'
 import { profilePath } from '../../utils/username.js'
 import { PANEL, MenuItem, MenuDivider } from './MenuParts.jsx'
 
-// PERSONAL account menu — opened by the avatar on the RIGHT of the header (like Instagram's profile menu). It only ever shows the
-// current account's own details (read from the authenticated user, never hard-coded) and personal pages. Business management stays
-// in the owner dashboard; application-level things stay in the Loco logo menu.
 const SIZE = { 8: 'h-8 w-8', 10: 'h-10 w-10' } // literal class names (Tailwind can't see built-up ones)
 function Avatar({ user, size = 8 }) {
   const [broken, setBroken] = useState(false)
@@ -25,7 +22,6 @@ export default function UserMenu() {
   const navigate = useNavigate(), { pathname, search } = useLocation()
   const { user, isAuthenticated, isSeller, logout } = useAuth()
   const go = (to) => () => { close(); navigate(to) }
-  // a business owner's personal profile is their public page; everyone else's is their personal overview
   const myProfile = isSeller && user?.username ? profilePath(user.username) : '/activity'
 
   return (

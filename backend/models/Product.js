@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// One purchase/restock of a product. Same product → many batches, each with its own cost price.
-// Selling always drains the OLDEST batch first (FIFO) — see utils/stock.js.
 const batchSchema = new mongoose.Schema(
   {
     quantity: { type: Number, required: true, min: 0 },      // total received in this batch

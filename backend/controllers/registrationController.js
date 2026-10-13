@@ -167,11 +167,9 @@ export const uploadRegistrationAvatar = asyncHandler(async (req, res) => {
 })
 
 // POST /api/auth/register/complete { username, password, confirmPassword }
-// Creates the account. Every "verified" fact is re-checked here on the server. Safe to call twice (idempotent).
 export const completeRegistration = asyncHandler(async (req, res) => {
   let s = req.reg
 
-  // Replay (double click / retry after a dropped response): hand back the same account instead of making another.
   if (s.userId) {
     const existing = await User.findById(s.userId)
     if (existing) return res.json({ token: generateToken(existing._id), user: existing.toSafeObject(), next: s.next, replay: true })

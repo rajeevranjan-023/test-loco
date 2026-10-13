@@ -1,8 +1,5 @@
 import mongoose from 'mongoose'
 
-// Homepage category tile (Shops, Services, Libraries …). Managed by admins.
-// `kind` decides which listings supply the fallback image when no image was uploaded.
-// `tone` is a KEY (orange, green, …) — the frontend maps it to Tailwind classes.
 const categorySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },

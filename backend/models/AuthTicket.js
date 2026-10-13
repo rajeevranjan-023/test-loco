@@ -1,7 +1,5 @@
 import mongoose from 'mongoose'
 
-// Short-lived, single-use hand-off between the Google callback (backend) and the SPA. The callback never puts a session
-// token or profile in a URL — only this opaque ticket, which the SPA exchanges via POST.
 const authTicketSchema = new mongoose.Schema(
   {
     tokenHash: { type: String, required: true, unique: true },

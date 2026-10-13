@@ -16,14 +16,6 @@ export function streamUpload(buffer, options) {
   })
 }
 
-// Cloudinary SDK errors carry useful diagnostic fields, but — this is the
-// part that's easy to miss — the SHAPE of the error object is NOT
-// consistent across the SDK. Verified directly against the SDK itself:
-//   • cloudinary.uploader.upload_stream(...)  -> err = { message, http_code, name }        (flat)
-//   • cloudinary.api.ping() / other Admin API -> err = { error: { message, http_code }, ... } (nested under `.error`)
-// Reading only `err.message` (as a first draft of this code did) silently
-// produces "[object Object]" for the nested shape, which is exactly the
-// kind of unhelpful, misleading error you were fighting.
 function describeCloudinaryError(err) {
   const inner = err?.error && typeof err.error === 'object' ? err.error : err
   const httpCode = inner?.http_code ?? err?.http_code
@@ -51,8 +43,6 @@ function describeCloudinaryError(err) {
 // _________________________________________________________________________
 // =========================================================================
 // GET /api/media/test-config  (public) — minimal connectivity check.
-// Pings Cloudinary with your configured credentials and reports exactly
-// what's wrong, instead of you having to infer it from an upload failure.
 export const testCloudinaryConfig = asyncHandler(async (req, res) => {
   const prod = isProduction()
   if (!isCloudinaryConfigured()) {
@@ -84,8 +74,6 @@ export const testCloudinaryConfig = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // POST /api/media/upload  (protected) — multipart field name: "file"
-// Optional body field `folder` (e.g. "avatars", "products", "reviews")
-// just organizes the asset in the Cloudinary media library.
 export const uploadMedia = asyncHandler(async (req, res) => {
   if (!isCloudinaryConfigured()) {
     return res.status(503).json({
@@ -109,8 +97,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     const result = await streamUpload(req.file.buffer, {
       folder,
       resource_type: isVideo ? 'video' : 'image',
-      // Keep images reasonably sized on the way in — a light, safe
-      // compression step per the "compress images before upload" note.
       transformation: isVideo ? undefined : [{ width: 1600, height: 1600, crop: 'limit', quality: 'auto:good' }],
     })
 
@@ -118,7 +104,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
       url: result.secure_url,
       publicId: result.public_id,
       resourceType: result.resource_type,
-      // Cloudinary auto-generates a JPG thumbnail for videos at the same public_id.
       thumbnailUrl: isVideo
         ? getCloudinary().url(result.public_id, { resource_type: 'video', format: 'jpg' })
         : result.secure_url,
@@ -126,7 +111,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
   } catch (err) {
     const { httpCode, message, hint } = describeCloudinaryError(err)
 
-    // The REAL error stays in the server log (redacted: Cloudinary messages can contain account identifiers / the API key).
     logger.error('cloudinary', 'upload failed', {
       httpCode,
       message,
@@ -136,8 +120,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
       file: { mimetype: req.file.mimetype, size: req.file.size },
     })
 
-    // Cloudinary's status code is NOT forwarded. A 401/403 from Cloudinary means OUR credentials are wrong — to the user that
-    // must never look like "your session expired" or "you lack permission". Map it to what the user can act on.
     const status = httpCode === 400 ? 400 : httpCode === 420 || httpCode === 429 ? 503 : 502
     const text = status === 400 ? 'That file could not be processed. Please try a different image or video.'
       : status === 503 ? 'Uploads are busy right now. Please try again in a few minutes.'
@@ -154,7 +136,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
 // _________________________________________________________________________
 // =========================================================================
 // DELETE /api/media/:publicId  (protected) — lets a replace/remove action
-// clean up the old asset. publicId is URL-encoded since it contains slashes.
 export const deleteMedia = asyncHandler(async (req, res) => {
   if (!isCloudinaryConfigured()) {
     return res.status(503).json({ message: 'Media storage is not configured.' })

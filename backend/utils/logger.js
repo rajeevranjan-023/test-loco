@@ -1,12 +1,3 @@
-// Server-side diagnostics with secret redaction. This is NOT a second logging system: it is a thin wrapper around console
-// (which is what the app already used everywhere) that guarantees nothing sensitive reaches the log.
-//
-//   redactText(s)   – scrubs connection strings, bearer tokens, JWTs, "password=…" style pairs, API keys
-//   redactUrl(u)    – keeps the path, masks sensitive query values (OAuth `code`/`state`, reset `token`, …)
-//   redactObject(o) – deep copy where sensitive keys (password, token, authorization, cookie, …) are masked
-//   logger.error/warn/info(tag, message, meta) – one line, always redacted
-//
-// In NODE_ENV=test the logger is silent unless LOG_IN_TEST=true (the previous error handler behaved the same way).
 import { redactUri } from '../seed/guard.js' // the existing connection-string redactor — reused, not re-implemented
 
 export const REDACTED = '[REDACTED]'
@@ -62,7 +53,6 @@ export const logger = {
   info: (tag, message, meta) => emit('log', tag, message, meta),
 }
 
-// Same message at most once per `everyMs` — keeps an outage (every request failing the same way) from flooding the log.
 const lastSeen = new Map()
 export function logThrottled(level, key, everyMs, tag, message, meta) {
   const now = Date.now()

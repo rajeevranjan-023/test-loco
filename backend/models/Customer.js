@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// A shop's saved customer — powers the billing screen's type-ahead (match by name OR mobile).
 const customerSchema = new mongoose.Schema(
   {
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true, index: true },

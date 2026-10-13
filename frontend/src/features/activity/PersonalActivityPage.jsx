@@ -8,10 +8,6 @@ import { DEFAULT_AVATAR } from '../../utils/placeholders.js'
 import { profilePath } from '../../utils/username.js'
 import ErrorState from '../../components/ErrorState.jsx'
 
-// Personal analytics / activity — the Analytics tab for an account WITHOUT a business.
-// This is only the base structure: the page renders the SECTIONS list below, each section is an independent component that
-// receives the same `data`. Adding a section later = write a component + add one line to SECTIONS. It shows real data only
-// (the account itself, the requests it posted, the businesses it follows) and an empty state where there is nothing yet.
 const date = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 const Card = ({ title, children, right }) => (
   <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">

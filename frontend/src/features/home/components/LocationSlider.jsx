@@ -3,8 +3,6 @@ import Section from './Section.jsx'
 import SectionHeader from './SectionHeader.jsx'
 import Img from '../../../components/Img.jsx'
 
-// The ONLY horizontally scrolling area. Scroll stays inside this row; the page never scrolls sideways.
-// Clicking a city re-queries the homepage for that city (no reload).
 export default function LocationSlider({ cities = [], active, onSelect }) {
   if (!cities.length) return null
   return (
