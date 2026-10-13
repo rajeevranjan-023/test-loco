@@ -326,10 +326,12 @@ export default function BillingPage() {
     focusSoon(refR, true)
   }
 
+  const saving = useRef(false) // synchronous guard: Generate, Ctrl+Enter and Save & Print can never start a second save of the same bill
   const generate = useCallback(async () => {
-    if (busy) return
+    if (busy || saving.current) return
     if (!items.length) { say('err', multi ? 'Add at least one item' : 'Add at least one product'); focusSoon(refP); return }
     if (!customer) { say('err', tx('Select a customer first (F1)')); focusSoon(refC); return }
+    saving.current = true
     setBusy(true)
     try {
       const res = await call('post', '/api/seller/sales', {
@@ -353,7 +355,7 @@ export default function BillingPage() {
       resetAll(true); say('ok', `Bill ${id} generated · ${rupee(total)} · ${res.status}${st.creditUsed ? ` · Advance ${rupee(st.creditUsed)} used` : ''}${st.advanceAdded ? ` · ${rupee(st.advanceAdded)} added to Advance Balance` : ''}${nu ? ` · ${nu} new item${nu > 1 ? 's' : ''} sent to Inventory` : ''}`, { billId: res.billId })
       recent.reload(); loadProducts(); loadServices(); reloadStudyCat(); if (draftId) loadDrafts()
       return res
-    } catch (e) { lastErr.current = e.message || 'Could not save the bill'; say('err', lastErr.current) } finally { setBusy(false) }
+    } catch (e) { lastErr.current = e.message || 'Could not save the bill'; say('err', lastErr.current) } finally { saving.current = false; setBusy(false) }
   }, [busy, items, balance, customer, received, billRecv, creditUsed, oldSettle, total, disc, discount, discountType, splitOn, splitList, caps, ctxVals, multi, method, returned, notes, draftId, resetAll, recent, loadProducts, loadServices, loadDrafts])
 
   /* ───────── drafts ───────── */
@@ -401,12 +403,24 @@ export default function BillingPage() {
     })
     return doc
   }
-  const saveFromPreview = async () => {
-    if (!customer) throw new Error('Select a customer first — close this and press F1')
+  // the one place a bill is saved from a button other than Generate: the same generate() (stock, payment, udhar & advance run once, inside it), then the form is already reset
+  const saveBill = async () => {
     lastErr.current = ''
     const res = await generate()
     if (!res) throw new Error(lastErr.current || 'Could not save the bill')
+    return res
+  }
+  const saveFromPreview = async () => {
+    if (!customer) throw new Error('Select a customer first — close this and press F1')
+    const res = await saveBill()
     setPreview((p) => p && { saved: true, billId: res.billId })
+  }
+  // 80mm / A4 → Save & Print: save once, then hand BillActions the SAVED bill's document (the form is cleared by now) so it opens the print dialog straight away
+  const saveForPrint = async () => {
+    if (!items.length) { focusSoon(refP); throw new Error(multi ? 'Add at least one item' : 'Add at least one product') }
+    if (!customer) { focusSoon(refC); throw new Error(tx('Select a customer first (F1)')) }
+    const res = await saveBill()
+    return call('get', `/api/seller/billing/bills/${res.billId}/document`)
   }
 
   // global hot-keys: F1 customer · F2 product · F3 amount received · F4 payment method · Ctrl+Enter generate
@@ -687,7 +701,7 @@ export default function BillingPage() {
 
             <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
               <button type="button" onClick={saveDraft} disabled={busy} className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-[#D9D2F7] bg-[#FAF8FF] text-[13px] font-medium text-[#6D5BD0] transition hover:bg-[#F1EDFD] disabled:opacity-60"><Save size={15} />Save as Draft</button>
-              <div className="col-span-2 sm:col-span-1"><BillActions size="sm" getDoc={async () => liveDoc()} onError={(m) => say('err', m)} /></div>
+              <div className="col-span-2 sm:col-span-1"><BillActions size="sm" getDoc={async () => liveDoc()} onSave={saveForPrint} onError={(m) => say('err', m)} /></div>
               <button type="button" onClick={generate} disabled={busy} className="col-span-2 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#12A05C] text-[15px] font-medium text-white shadow-sm transition hover:bg-[#0E8A4E] disabled:opacity-60"><FileText size={18} />{busy ? 'Saving…' : 'Generate Bill (Enter)'}</button>
             </div>
           </section>
