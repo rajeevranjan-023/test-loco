@@ -5,6 +5,7 @@ import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cart
 import { useSeller } from '../kit.jsx'
 import { Card } from '../ui.jsx'
 import { EntryDetail, inr, dt } from '../udhar/parts.jsx'
+import { PhotoBadge } from '../udhar/PhotoGallery.jsx'
 
 const FILTERS = [['all', 'All'], ['bills', 'Bills'], ['payments', 'Payments'], ['udhar', 'Udhar'], ['advance', 'Advance'], ['adjustments', 'Adjustments']]
 const TYPE = { Bill: 'bg-[#EEF1F6] text-gray-700', Payment: 'bg-[#E6F0FE] text-[#2F6FEB]', Udhar: 'bg-[#FDE8E8] text-[#D92D20]', Adjustment: 'bg-[#FFF3D6] text-[#B77700]' }
@@ -88,7 +89,7 @@ export default function Timeline({ customerId, initial = 'all', version = 0, onA
                       <td className="px-2 leading-tight">{r.billId ? <button type="button" onClick={() => nav(`/bill/${r.billRef}`)} className="font-semibold text-[#2F6FEB] hover:underline">{r.billId}</button> : <span className="text-gray-300">—</span>}{r.kind === 'bill' && <span className="block text-[10.5px] text-gray-400">{r.items} item{r.items === 1 ? '' : 's'}</span>}</td>
                       <td className="px-2 text-right"><Amount r={r} /></td>
                       <td className="px-2 text-gray-600">{r.payment}</td>
-                      <td className="px-2"><Pill cls={STATUS[r.status] || STATUS.Paid}>{r.status}</Pill>{r.kind === 'bill' && type === 'all' && <Effects list={r.effects} />}{r.note && r.kind !== 'bill' && <span className="block max-w-[170px] truncate text-[10.5px] text-gray-400" title={r.note}>{r.note}</span>}</td>
+                      <td className="px-2"><Pill cls={STATUS[r.status] || STATUS.Paid}>{r.status}</Pill><PhotoBadge photos={r.photos} />{r.kind === 'bill' && type === 'all' && <Effects list={r.effects} />}{r.note && r.kind !== 'bill' && <span className="block max-w-[170px] truncate text-[10.5px] text-gray-400" title={r.note}>{r.note}</span>}</td>
                       <td className="px-2 text-right"><Bal v={r.balanceAfter} /></td>
                       <td className="px-3 text-right"><button type="button" onClick={() => open(r)} title={r.kind === 'bill' || r.billRef ? 'Open bill' : 'Details'} aria-label="View" className="inline-flex h-7 items-center gap-1 rounded-md border border-[#E3EAF3] px-2.5 text-[11.5px] text-gray-700 transition hover:border-orange-300"><Eye size={12} />View</button></td>
                     </tr>))}

@@ -74,13 +74,15 @@ router.get('/billing/bills/:billId/document', billDocument)
 router.get('/billing/recent', recentBills)
 router.get('/billing/bills/:billId', billDetail)
 
+import { udharPhotos } from '../middleware/upload.js'
 import { overview as udharOverview, addEntry as udharAdd, customerHistory, entryDetail, setPinned } from '../controllers/udharController.js'
 router.get('/udhar/overview', udharOverview)
-router.post('/udhar/entries', udharAdd)
+router.post('/udhar/entries', udharPhotos, udharAdd) // JSON (as before) or multipart with up to 2 photos
 router.get('/udhar/entries/:entryId', entryDetail)
 router.get('/udhar/customers/:id/history', customerHistory)
 router.patch('/udhar/customers/:id/pin', setPinned)
 
+// Seller panel pages: shell summary, orders, customers, offers, messages
 import { getSummary, listOffers, createOffer, updateOffer, deleteOffer, listConversations, getThread, sendMessage } from '../controllers/panelController.js'
 router.get('/summary', getSummary)
 import { listOrders, getOrder, updateOrderStatus, editOrder, deleteOrder, addOrderPayment } from '../controllers/ordersController.js'

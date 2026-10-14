@@ -7,7 +7,7 @@ export const r2 = (n) => Math.round(n * 100) / 100
 export const EPS = 0.005
 export const statusOf = (bal) => (bal > EPS ? 'pending' : bal < -EPS ? 'advance' : 'cleared')
 
-export async function applyLedger({ shopId, customer, type, amount, source = 'manual', billId = null, items = [], paymentType = 'cash', note = '', date = new Date() }) {
+export async function applyLedger({ shopId, customer, type, amount, source = 'manual', billId = null, items = [], paymentType = 'cash', note = '', date = new Date(), meta = {} }) {
   type = { add: 'udhar', extra: 'credit' }[type] || type
   amount = r2(Number(amount))
   if (type === 'adjustment' ? !(Math.abs(amount) > 0) : !(amount > 0)) throw Object.assign(new Error('Amount must be greater than 0.'), { status: 400, expose: true })
@@ -21,7 +21,7 @@ export async function applyLedger({ shopId, customer, type, amount, source = 'ma
   const prev = u.totalAmount
   let bal = prev
   const out = []
-  const push = (t, a, sign, pt = paymentType, n = note) => { bal = r2(bal + sign * a); out.push({ shopId, customerId: customer._id, type: t, amount: a, delta: sign * a, source, billId, items, paymentType: pt, note: n, balanceAfter: bal, date }) }
+  const push = (t, a, sign, pt = paymentType, n = note) => { bal = r2(bal + sign * a); out.push({ shopId, customerId: customer._id, type: t, amount: a, delta: sign * a, source, billId, items, paymentType: pt, note: n, balanceAfter: bal, date, ...(t === 'udhar' ? meta : {}) }) }
 
   if (type === 'udhar') push('udhar', amount, +1)
   else if (type === 'payment') {
@@ -68,7 +68,6 @@ export async function migrateLedger() {
 }
 
 // Recompute a customer's running balances + account fields from their remaining history.
-// Used when an order is cancelled/deleted and its ledger lines are removed.
 export async function rebuildLedger(shopId, customerId) {
   const entries = await UdharHistory.find({ shopId, customerId }).sort({ date: 1, createdAt: 1 })
   let bal = 0, pendingSince = null, clearedAt = null, lastAddedAt = null

@@ -7,6 +7,7 @@ import Sale from '../models/Sale.js'
 import Shop from '../models/Shop.js'
 import { statusOf, EPS, r2, applyLedger } from '../utils/ledger.js'
 import { displayBillId } from '../utils/billId.js'
+import { publicPhotos } from '../utils/udharPhotos.js'
 
 const sid = (req) => req.sellerAccount._id
 // Any seller account (shop OR service provider) uses the one billing / customer / inventory system.
@@ -37,7 +38,7 @@ export const listCustomers = asyncHandler(async (req, res) => {
 
 // What a notebook line is called in the UI
 const describe = (e) => (e.type === 'adjustment' ? 'Adjustment' : e.type === 'udhar' ? (e.source === 'billing' ? 'Bill (Udhar)' : 'Udhar added') : e.type === 'payment' ? (e.source === 'billing' ? 'Bill Payment' : 'Payment received') : e.delta > 0 ? 'Advance used' : 'Advance Payment')
-const entryOut = (e) => ({ id: e._id, customerId: e.customerId, type: e.type, description: describe(e), amount: e.amount, delta: e.delta, change: r2(-e.delta), date: e.date, balanceAfter: e.balanceAfter, balance: r2(-e.balanceAfter), remaining: Math.max(e.balanceAfter, 0), paymentType: e.paymentType })
+const entryOut = (e) => ({ id: e._id, customerId: e.customerId, type: e.type, description: describe(e), amount: e.amount, delta: e.delta, change: r2(-e.delta), date: e.date, balanceAfter: e.balanceAfter, balance: r2(-e.balanceAfter), remaining: Math.max(e.balanceAfter, 0), paymentType: e.paymentType, photos: publicPhotos(e) })
 const txnStatus = (b) => (b.advanceAdded > 0 ? 'Advance' : b.unpaidAmount > 0 ? 'Udhar' : 'Paid')
 
 // GET /api/customers/:id — customer basic info + orders + udhar history + balance history (one call, opened on its own page)
@@ -173,7 +174,7 @@ export const getTransactions = asyncHandler(async (req, res) => {
       return {
         key: `e${e._id}`, kind, type: kind === 'udhar' ? 'Udhar' : kind === 'adjustment' ? 'Adjustment' : 'Payment', date: e.date, entryId: e._id, billRef: e.billId || null, billId: e.billId ? shortBill(e.billId) : null,
         amount: kind === 'adjustment' ? r2(e.delta) : e.amount, payment: kind === 'udhar' ? 'Udhar' : kind === 'adjustment' ? '—' : kind === 'advance_used' ? 'Advance' : String(e.paymentType || 'cash').toUpperCase(),
-        status: { udhar: 'Udhar', payment: 'Received', advance: 'Advance', advance_used: 'Advance Used', adjustment: 'Adjusted' }[kind], source: e.source, note: e.note || '', balanceAfter: e.balanceAfter, hidden: e.source === 'billing', // billing-sourced lines show inside their bill row in the All view
+        status: { udhar: 'Udhar', payment: 'Received', advance: 'Advance', advance_used: 'Advance Used', adjustment: 'Adjusted' }[kind], source: e.source, note: e.note || '', photos: publicPhotos(e), balanceAfter: e.balanceAfter, hidden: e.source === 'billing', // billing-sourced lines show inside their bill row in the All view
       }
     }
     const b = it.b

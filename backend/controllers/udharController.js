@@ -6,8 +6,8 @@ import Sale from '../models/Sale.js'
 import { applyLedger, statusOf, EPS } from '../utils/ledger.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { displayBillId } from '../utils/billId.js'
-import { touchGlobalUser } from '../utils/globalUser.js'
-import { hooksFor } from '../utils/businessHooks.js'
+import { validateUdharPhotos } from '../middleware/upload.js'
+import { storePhotos, removePhotos, photosConfigured, publicPhotos } from '../utils/udharPhotos.js'
 
 const DAY = 864e5
 const sid = (req) => req.sellerAccount._id
@@ -20,6 +20,7 @@ const shortId = (b) => displayBillId(b, '#ORD')
 // kind of a notebook line, as shown in history: udhar (+) · payment (−) · advance (+) · advance_used (−)
 const kindOf = (e) => (e.type === 'adjustment' ? 'adjustment' : e.type === 'credit' ? (e.delta > 0 ? 'advance_used' : 'advance') : e.type)
 
+const entryOut = (e) => ({ id: e._id, customerId: e.customerId, type: e.type, amount: e.amount, delta: e.delta, balanceAfter: e.balanceAfter, date: e.date, note: e.note, photos: publicPhotos(e) })
 const row = (u, now = Date.now()) => ({
   id: u.customerId, name: u.customerName, phone: u.phone || '', total: u.totalAmount, pinned: !!u.pinned,
   status: statusOf(u.totalAmount), advance: u.totalAmount < -EPS ? Math.round(-u.totalAmount * 100) / 100 : 0,
@@ -76,35 +77,57 @@ export const overview = asyncHandler(async (req, res) => {
   })
 })
 
-// POST /api/seller/udhar/entries  { customerId | (name, phone), type: udhar|payment|credit, amount, paymentType, note }
+// POST /api/seller/udhar/entries  { customerId | (name, phone), type: udhar|payment|credit, amount, paymentType, note, clientRequestId? }
+const inFlight = new Set() // ids being saved right now in this process (a double-tap / fast retry can not run twice in parallel)
+const cleanRequestId = (v) => (/^[A-Za-z0-9_-]{8,64}$/.test(String(v || '')) ? String(v) : null)
+const fail = (status, message, code) => Object.assign(new Error(message), { status, expose: true, ...(code ? { code } : {}) })
+
 export const addEntry = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const { customerId, name, phone, type, amount, paymentType, note } = req.body
   if (!['udhar', 'payment', 'credit'].includes(type)) return res.status(400).json({ message: 'Type must be udhar, payment or credit.' })
-  let customer = null
-  if (customerId) customer = await Customer.findOne({ _id: customerId, shopId: sid(req) })
-  else if (String(name || '').trim()) {
-    if (phone && !/^\d{10}$/.test(String(phone))) return res.status(400).json({ message: 'Mobile number must be 10 digits.' })
-    const nm = String(name).trim()
-    // Never create a second record for a person this shop already has: the same number → that customer; the same name with a DIFFERENT number is a
-    // clash (the old upsert silently overwrote the saved number); the same name without a number just gets the number.
-    const byPhone = phone ? await Customer.findOne({ shopId: sid(req), phone: String(phone) }) : null
-    if (byPhone) customer = byPhone
-    else {
-      const byName = await Customer.findOne({ shopId: sid(req), name: nm })
-      if (byName?.phone && phone && byName.phone !== String(phone)) return res.status(409).json({ message: `You already have a customer named “${nm}” with a different number. Search for them, or change the name.` })
-      const fresh = !byName
-      customer = await Customer.findOneAndUpdate({ shopId: sid(req), name: nm }, { $setOnInsert: { shopId: sid(req), name: nm }, ...(phone ? { $set: { phone } } : {}) }, { upsert: true, new: true })
-      if (fresh) await hooksFor(req.sellerType).ensureParty?.(req.sellerAccount, customer) // study centre: the new person is registered as a Member too (as in billing)
-    }
-    if (phone && !customer.globalUserId) { // join the global directory, like the billing quick-add (count stays 0 until a bill is made)
-      const g = await touchGlobalUser(String(phone), customer.name, 0)
-      if (g) { customer.globalUserId = g._id; await customer.save() }
-    }
+  const files = req.files || []
+  const requestId = type === 'udhar' ? cleanRequestId(req.body.clientRequestId) : null
+
+  // ── photos: validated up front, before anything is uploaded or saved ──
+  if (files.length) {
+    if (type !== 'udhar') return res.status(400).json({ message: 'Photos can only be attached to an Udhar entry.' })
+    const bad = validateUdharPhotos(files)
+    if (bad) return res.status(400).json({ message: bad })
+    if (!(r2(Number(amount)) > 0)) return res.status(400).json({ message: 'Amount must be greater than 0.' })
+    if (!photosConfigured()) return res.status(503).json({ message: 'Photo uploads are not set up on the server yet. Save the entry without photos, or ask the admin to configure Cloudinary.' })
   }
-  if (!customer) return res.status(400).json({ message: 'Choose a customer.' })
-  const { udhar, entries } = await applyLedger({ shopId: sid(req), customer, type, amount, source: 'manual', paymentType: ['cash', 'upi', 'card'].includes(paymentType) ? paymentType : 'cash', note: String(note || '').slice(0, 300) })
-  res.status(201).json({ row: row(udhar), entries })
+
+  // ── retry of an entry that was already saved → hand back that one, change nothing ──
+  if (requestId) {
+    const prior = await UdharHistory.find({ shopId: sid(req), clientRequestId: requestId }).sort({ createdAt: 1 }).lean()
+    if (prior.length) {
+      const u = await Udhar.findOne({ shopId: sid(req), customerId: prior[0].customerId }).lean()
+      return res.status(200).json({ row: u ? row(u) : null, entries: prior.map(entryOut), replayed: true })
+    }
+    if (inFlight.has(`${sid(req)}:${requestId}`)) return res.status(409).json({ message: 'This entry is already being saved. Please wait a moment.', code: 'ALREADY_SAVING' })
+    inFlight.add(`${sid(req)}:${requestId}`)
+  }
+
+  let uploaded = []
+  try {
+    let customer = null
+    const newName = String(name || '').trim()
+    if (customerId) customer = await Customer.findOne({ _id: customerId, shopId: sid(req) })
+    else if (newName) {
+      if (phone && !/^\d{10}$/.test(String(phone))) return res.status(400).json({ message: 'Mobile number must be 10 digits.' })
+    }
+    if (!customer && !(newName && !customerId)) return res.status(400).json({ message: 'Choose a customer.' })
+
+    if (files.length) uploaded = await storePhotos(files, sid(req)) // all or nothing — throws (and cleans up) if any photo fails
+
+    if (!customer) customer = await Customer.findOneAndUpdate({ shopId: sid(req), name: newName }, { $setOnInsert: { shopId: sid(req), name: newName }, ...(phone ? { $set: { phone } } : {}) }, { upsert: true, new: true })
+    let result
+    try {
+      result = await applyLedger({ shopId: sid(req), customer, type, amount, source: 'manual', paymentType: ['cash', 'upi', 'card'].includes(paymentType) ? paymentType : 'cash', note: String(note || '').slice(0, 300), meta: { ...(uploaded.length ? { photos: uploaded } : {}), ...(requestId ? { clientRequestId: requestId } : {}) } })
+    } catch (e) { await removePhotos(uploaded); throw e } // the entry was not saved → its freshly uploaded photos must not be left behind
+    res.status(201).json({ row: row(result.udhar), entries: result.entries })
+  } finally { if (requestId) inFlight.delete(`${sid(req)}:${requestId}`) }
 })
 
 // GET /api/seller/udhar/customers/:id/history   (oldest → newest, like a notebook)
@@ -119,7 +142,7 @@ export const customerHistory = asyncHandler(async (req, res) => {
     customer: row(u),
     entries: entries.map((e) => ({
       id: e._id, type: e.type, kind: kindOf(e), amount: e.amount, source: e.source, date: e.date, balanceAfter: e.balanceAfter, paymentType: e.paymentType, note: e.note,
-      billId: e.billId ? shortId(e.billId) : null, summary: (e.items || []).map((i) => i.name.replace(/\s*\([^)]*\)\s*$/, '')).slice(0, 3).join(', '),
+      photos: publicPhotos(e), billId: e.billId ? shortId(e.billId) : null, summary: (e.items || []).map((i) => i.name.replace(/\s*\([^)]*\)\s*$/, '')).slice(0, 3).join(', '),
     })),
   })
 })
@@ -136,7 +159,7 @@ export const entryDetail = asyncHandler(async (req, res) => {
     billTotal = bill?.totalAmount ?? null
     if (!items.length) { const lines = await Sale.find({ shopId: sid(req), billId: e.billId }).populate('productId', 'name').lean(); items = lines.map((l) => ({ name: l.productId?.name || 'Item', qty: l.quantity, price: l.priceAtSale, total: r2(l.quantity * l.priceAtSale) })) }
   }
-  res.json({ id: e._id, type: e.type, kind: kindOf(e), delta: e.delta, amount: e.amount, source: e.source, addedBy: e.source === 'billing' ? 'Billing' : 'Manual (Udhar dashboard)', date: e.date, billId: e.billId ? shortId(e.billId) : null, billRef: e.billId, billTotal, paymentType: e.paymentType, note: e.note, balanceAfter: e.balanceAfter, items })
+  res.json({ id: e._id, type: e.type, kind: kindOf(e), delta: e.delta, amount: e.amount, source: e.source, addedBy: e.source === 'billing' ? 'Billing' : 'Manual (Udhar dashboard)', date: e.date, billId: e.billId ? shortId(e.billId) : null, billRef: e.billId, billTotal, paymentType: e.paymentType, note: e.note, balanceAfter: e.balanceAfter, items, photos: publicPhotos(e) })
 })
 
 // PATCH /api/seller/udhar/customers/:id/pin  { pinned }  — max 4 pinned

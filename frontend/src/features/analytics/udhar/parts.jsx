@@ -3,6 +3,9 @@ import { useOwnerNavigate } from '../../../hooks/useOwnerPath.jsx'
 import { Pin, Clock, MoreVertical, Plus, Search, X, ArrowDownLeft, ArrowUpRight, Gift, Minus } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { useSeller, call, Modal } from '../kit.jsx'
+import { api } from '../../../services/api.js'
+import PhotoPicker from './PhotoPicker.jsx'
+import { PhotoGallery, PhotoBadge } from './PhotoGallery.jsx'
 import { useBusiness } from '../../../context/BusinessContext.jsx'
 
 export const inr = (n) => '₹' + (Math.round((n || 0) * 100) / 100).toLocaleString('en-IN')
@@ -123,7 +126,8 @@ export function HistoryDrawer({ customer, version, onClose, onEntry, onOpenEntry
                 <button type="button" onClick={() => onOpenEntry(e.id)} className="flex w-full items-center gap-3 rounded-xl border border-transparent px-2.5 py-2 text-left transition hover:border-orange-200 hover:bg-[#FFFAF4]">
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${k.bg}`}><I size={15} /></span>
                   <span className="min-w-0 flex-1 leading-tight"><span className={`text-[14px] font-semibold ${k.cls}`}>{k.sign} {inr(e.amount)}</span> <span className="text-[13px] text-gray-700">({k.text})</span>
-                    <span className="mt-0.5 block text-[11.5px] text-gray-400">{dt(e.date)} · {e.source === 'billing' ? `Billing${e.billId ? ` ${e.billId}` : ''}` : 'Manual'}{detail(e) ? ` · ${detail(e)}` : ''}</span></span>
+                    <span className="mt-0.5 block text-[11.5px] text-gray-400">{dt(e.date)} · {e.source === 'billing' ? `Billing${e.billId ? ` ${e.billId}` : ''}` : 'Manual'}{detail(e) ? ` · ${detail(e)}` : ''}<PhotoBadge photos={e.photos} /></span>
+                    {e.photos?.length > 0 && <span className="mt-1 flex gap-1">{e.photos.map((p) => <img key={p.url} src={p.thumb || p.url} alt="Attached photo" loading="lazy" className="h-9 w-9 rounded border border-gray-100 object-cover" />)}</span>}</span>
                   <span className="text-right text-[11px] leading-tight text-gray-400">Balance<span className="block text-[12.5px] font-medium text-gray-700">{e.balanceAfter < 0 ? <span className="text-[#2F6FEB]">Adv {inr(-e.balanceAfter)}</span> : inr(e.balanceAfter)}</span></span>
                 </button>
               </li>) })}<li ref={end} /></ul>}
@@ -151,6 +155,7 @@ export function EntryDetail({ id, onClose }) {
           {e.billTotal != null && <Row l="Bill total" v={inr(e.billTotal)} />}
           <Row l="Balance after" v={e.balanceAfter < 0 ? `Advance ${inr(-e.balanceAfter)}` : inr(e.balanceAfter)} />
           {e.note && <Row l="Note" v={e.note} />}
+          <PhotoGallery photos={e.photos} />
           {e.items.length > 0 && (
             <div className="mt-3"><div className="mb-1 text-[12.5px] font-semibold">Products</div>
               <table className="w-full text-[12.5px]"><thead className="bg-[#F5F7FA] text-left text-[11.5px]"><tr><th className="px-2 py-1.5">Item</th><th>Qty</th><th className="text-right">Price</th><th className="px-2 text-right">Total</th></tr></thead>
@@ -168,8 +173,11 @@ export function EntryModal({ init, onClose, onSaved }) {
   const [amount, setAmount] = useState('')
   const [pt, setPt] = useState('cash')
   const [note, setNote] = useState('')
-  const [q, setQ] = useState(''); const [list, setList] = useState([]); const [fresh, setFresh] = useState(init.fresh || null) // init.fresh = a new customer typed in the Udhar search (name / mobile prefilled)
+  const [q, setQ] = useState(''); const [list, setList] = useState([]); const [fresh, setFresh] = useState(null)
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+  const [photos, setPhotos] = useState([]); const [progress, setProgress] = useState(null)
+  // One id per opened form: a retry of the SAME entry (after a failed upload / dropped connection) can never be saved twice.
+  const requestId = useRef(`${Date.now().toString(36)}-${(globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9-]/g, '')}`.slice(0, 64))
   const amtRef = useRef()
   useEffect(() => { if (cust) return; let live = true; const t = setTimeout(() => call('get', `/api/seller/billing/customers?q=${encodeURIComponent(q.trim())}`).then((r) => live && setList(r)).catch(() => {}), 110); return () => { live = false; clearTimeout(t) } }, [q, cust])
   useEffect(() => { if (cust) setTimeout(() => amtRef.current?.focus(), 0) }, [cust])
@@ -178,17 +186,30 @@ export function EntryModal({ init, onClose, onSaved }) {
   const owed = Math.max(bal, 0), credit = Math.max(-bal, 0)
   const a = Number(amount) || 0
   const after = type === 'udhar' ? bal + a : bal - a
+  const withPhotos = type === 'udhar' && photos.length > 0
   const submit = async () => {
-    setBusy(true); setErr('')
+    if (busy) return
+    setBusy(true); setErr(''); setProgress(null)
     try {
-      const body = { type, amount: a, paymentType: pt, note, ...(cust?.id ? { customerId: cust.id } : { name: fresh.name, phone: fresh.phone }) }
-      onSaved(await call('post', '/api/seller/udhar/entries', body))
-    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+      const who = cust?.id ? { customerId: cust.id } : { name: fresh.name, phone: fresh.phone }
+      const body = { type, amount: a, paymentType: pt, note, ...who, ...(type === 'udhar' ? { clientRequestId: requestId.current } : {}) }
+      if (withPhotos) {
+        const fd = new FormData()
+        Object.entries(body).forEach(([k, v]) => v !== undefined && v !== '' && fd.append(k, String(v)))
+        photos.forEach((p) => fd.append('photos', p.file, p.file.name))
+        setProgress(0)
+        const res = await api.post('/api/seller/udhar/entries', fd, { requiresAuth: true, timeout: 120000, headers: { 'Content-Type': 'multipart/form-data' }, onUploadProgress: (ev) => ev.total && setProgress(Math.min(100, Math.round((ev.loaded / ev.total) * 100))) })
+        onSaved(res)
+      } else onSaved(await call('post', '/api/seller/udhar/entries', body))
+    } catch (e) {
+      // Nothing is silently saved without its photos: the form stays open with the photos still selected, and Retry is safe (same request id).
+      setErr(withPhotos ? `${e.message || 'Could not save the entry.'} Your photos are still selected — press Add Udhar to try again.` : e.message)
+    } finally { setBusy(false); setProgress(null) }
   }
   const ready = (cust || (fresh && fresh.name.trim())) && a > 0
   const seg = (on) => `h-9 flex-1 rounded-lg border text-[13px] font-medium transition ${on ? 'border-orange-400 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-orange-300'}`
   return (
-    <Modal title={tx('Add Udhar / Payment')} onClose={onClose}>
+    <Modal title={tx('Add Udhar / Payment')} onClose={() => !busy && onClose()} persistent={busy}>
       <form onSubmit={(e) => { e.preventDefault(); ready && submit() }} className="space-y-3">
         {cust ? (
           <div className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] p-2.5"><Avatar name={cust.name} size={36} /><div className="flex-1 leading-tight"><div className="text-[14px] font-semibold">{cust.name}</div><div className="text-[12px] text-gray-500">{cust.phone}{owed > 0 ? ` · owes ${inr(owed)}` : credit > 0 ? ` · advance ${inr(credit)}` : ''}</div></div>
@@ -207,9 +228,10 @@ export function EntryModal({ init, onClose, onSaved }) {
         <label className="block text-[12px] text-gray-600">Amount (₹)<input ref={amtRef} value={amount} inputMode="decimal" onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} className="mt-1 h-11 w-full rounded-lg border border-gray-200 px-3 text-[20px] outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100" /></label>
         {type !== 'udhar' && <div className="flex gap-2">{['cash', 'upi', 'card'].map((m) => <button key={m} type="button" onClick={() => setPt(m)} className={seg(pt === m)}>{m.toUpperCase()}</button>)}</div>}
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="Note (optional)" className="h-9 w-full rounded-lg border border-gray-200 px-3 text-[13px] outline-none focus:border-orange-400" />
+        {type === 'udhar' && <PhotoPicker photos={photos} onChange={setPhotos} disabled={busy} progress={progress} />}
         {cust && a > 0 && <div className={`rounded-lg px-3 py-2 text-[12.5px] ${after < 0 ? 'bg-[#E6F0FE] text-[#2F6FEB]' : 'bg-[#F8FAFC] text-gray-600'}`}>{after < 0 ? `Customer will have an Advance Balance of ${inr(-after)}` : after === 0 ? 'This clears the udhar completely ✓' : `New balance: ${inr(after)}`}</div>}
         {err && <p className="text-sm text-red-600">{err}</p>}
-        <div className="flex justify-end gap-2"><button type="button" onClick={onClose} className="h-10 rounded-lg border border-gray-200 px-4 text-[13px]">Cancel</button><button type="submit" disabled={!ready || busy} className={`h-10 rounded-lg px-5 text-[13px] font-medium text-white transition disabled:opacity-50 ${type === 'add' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#12A05C] hover:bg-[#0E8A4E]'}`}>{busy ? 'Saving…' : type === 'add' ? 'Add Udhar' : 'Receive Payment'}</button></div>
+        <div className="flex justify-end gap-2"><button type="button" onClick={onClose} disabled={busy} className="h-10 rounded-lg border border-gray-200 px-4 text-[13px] disabled:opacity-50">Cancel</button><button type="submit" disabled={!ready || busy} className={`h-10 rounded-lg px-5 text-[13px] font-medium text-white transition disabled:opacity-50 ${type === 'udhar' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#12A05C] hover:bg-[#0E8A4E]'}`}>{busy ? (withPhotos ? `Uploading… ${progress ?? 0}%` : 'Saving…') : type === 'udhar' ? 'Add Udhar' : type === 'credit' ? 'Add Advance' : 'Receive Payment'}</button></div>
       </form>
     </Modal>
   )
