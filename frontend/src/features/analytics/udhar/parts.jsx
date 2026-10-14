@@ -168,7 +168,7 @@ export function EntryModal({ init, onClose, onSaved }) {
   const [amount, setAmount] = useState('')
   const [pt, setPt] = useState('cash')
   const [note, setNote] = useState('')
-  const [q, setQ] = useState(''); const [list, setList] = useState([]); const [fresh, setFresh] = useState(null)
+  const [q, setQ] = useState(''); const [list, setList] = useState([]); const [fresh, setFresh] = useState(init.fresh || null) // init.fresh = a new customer typed in the Udhar search (name / mobile prefilled)
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const amtRef = useRef()
   useEffect(() => { if (cust) return; let live = true; const t = setTimeout(() => call('get', `/api/seller/billing/customers?q=${encodeURIComponent(q.trim())}`).then((r) => live && setList(r)).catch(() => {}), 110); return () => { live = false; clearTimeout(t) } }, [q, cust])

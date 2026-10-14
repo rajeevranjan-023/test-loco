@@ -6,6 +6,8 @@ import Sale from '../models/Sale.js'
 import { applyLedger, statusOf, EPS } from '../utils/ledger.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { displayBillId } from '../utils/billId.js'
+import { touchGlobalUser } from '../utils/globalUser.js'
+import { hooksFor } from '../utils/businessHooks.js'
 
 const DAY = 864e5
 const sid = (req) => req.sellerAccount._id
@@ -83,7 +85,22 @@ export const addEntry = asyncHandler(async (req, res) => {
   if (customerId) customer = await Customer.findOne({ _id: customerId, shopId: sid(req) })
   else if (String(name || '').trim()) {
     if (phone && !/^\d{10}$/.test(String(phone))) return res.status(400).json({ message: 'Mobile number must be 10 digits.' })
-    customer = await Customer.findOneAndUpdate({ shopId: sid(req), name: String(name).trim() }, { $setOnInsert: { shopId: sid(req), name: String(name).trim() }, ...(phone ? { $set: { phone } } : {}) }, { upsert: true, new: true })
+    const nm = String(name).trim()
+    // Never create a second record for a person this shop already has: the same number → that customer; the same name with a DIFFERENT number is a
+    // clash (the old upsert silently overwrote the saved number); the same name without a number just gets the number.
+    const byPhone = phone ? await Customer.findOne({ shopId: sid(req), phone: String(phone) }) : null
+    if (byPhone) customer = byPhone
+    else {
+      const byName = await Customer.findOne({ shopId: sid(req), name: nm })
+      if (byName?.phone && phone && byName.phone !== String(phone)) return res.status(409).json({ message: `You already have a customer named “${nm}” with a different number. Search for them, or change the name.` })
+      const fresh = !byName
+      customer = await Customer.findOneAndUpdate({ shopId: sid(req), name: nm }, { $setOnInsert: { shopId: sid(req), name: nm }, ...(phone ? { $set: { phone } } : {}) }, { upsert: true, new: true })
+      if (fresh) await hooksFor(req.sellerType).ensureParty?.(req.sellerAccount, customer) // study centre: the new person is registered as a Member too (as in billing)
+    }
+    if (phone && !customer.globalUserId) { // join the global directory, like the billing quick-add (count stays 0 until a bill is made)
+      const g = await touchGlobalUser(String(phone), customer.name, 0)
+      if (g) { customer.globalUserId = g._id; await customer.save() }
+    }
   }
   if (!customer) return res.status(400).json({ message: 'Choose a customer.' })
   const { udhar, entries } = await applyLedger({ shopId: sid(req), customer, type, amount, source: 'manual', paymentType: ['cash', 'upi', 'card'].includes(paymentType) ? paymentType : 'cash', note: String(note || '').slice(0, 300) })

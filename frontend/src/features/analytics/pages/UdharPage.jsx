@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom'
 import { Wallet, Users, Clock, Hourglass, CheckCircle2, Gift, Plus, Eye, Pin, BadgeIndianRupee, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
 import { useSeller, call } from '../kit.jsx'
 import RangePicker from '../udhar/RangePicker.jsx'
+import CustomerSearch from '../udhar/CustomerSearch.jsx'
+import { useOwnerNavigate } from '../../../hooks/useOwnerPath.jsx'
 import { Kpi, Trend, Toolbar, RowMenu, PinnedCard, HistoryDrawer, EntryDetail, EntryModal, Avatar, DaysBadge, StatusBadge, inr, dt } from '../udhar/parts.jsx'
 import { useBusiness } from '../../../context/BusinessContext.jsx'
 
@@ -12,6 +14,7 @@ const btn = 'flex h-6 items-center gap-1 rounded px-2 text-[11px] font-medium tr
 
 export default function UdharPage() {
   const { tx } = useBusiness()
+  const nav = useOwnerNavigate()
   const { urange, setUrange, reloadSummary } = useOutletContext()
   const [bucket, setBucket] = useState('month')
   const [graph, setGraph] = useState(false) // trends hidden by default; the 5th card toggles it
@@ -44,7 +47,8 @@ export default function UdharPage() {
   const pin = async (r, pinned) => { try { await call('patch', `/api/seller/udhar/customers/${r.id}/pin`, { pinned }); refresh() } catch (e) { setToast(e.message) } }
   const remind = (r) => { if (!r.phone) return setToast('No phone number saved for this customer'); window.open(`https://wa.me/91${r.phone}?text=${encodeURIComponent(`Namaste ${r.name}, aapka ${inr(r.total)} udhar baaki hai. Kripya jaldi clear karein. Dhanyavaad!`)}`, '_blank') }
   const openEntry = (customer, type) => setEntry({ customer, type })
-  const saved = (res) => { setEntry(null); refresh(); const t = res.entries.map((e) => e.type); setToast(t.includes('credit') ? `Saved · ${inr(res.entries.filter((e) => e.type === 'credit').reduce((s, e) => s + e.amount, 0))} added to Advance Balance` : t[0] === 'payment' ? tx('Payment recorded') : tx('Udhar added')) }
+  const saved = (res) => { const open = entry?.goto && res.row?.id; setEntry(null); refresh(); if (open) nav(`/customer/${res.row.id}`); // a customer created from the search opens their account
+    const t = res.entries.map((e) => e.type); setToast(t.includes('credit') ? `Saved · ${inr(res.entries.filter((e) => e.type === 'credit').reduce((s, e) => s + e.amount, 0))} added to Advance Balance` : t[0] === 'payment' ? tx('Payment recorded') : tx('Udhar added')) }
   const menu = (r, pend) => [['View history', () => setDrawer(r)], ['Add / Receive', () => openEntry(r, pend ? 'payment' : 'udhar')], ['Add Advance', () => openEntry(r, 'credit')], ...(pend ? [[r.pinned ? 'Unpin' : 'Pin to top', () => pin(r, !r.pinned)], ['Send reminder (WhatsApp)', () => remind(r)]] : [])]
   const k = d?.kpis
   const seg = (on) => `rounded px-2 py-0.5 text-[11px] font-medium transition ${on ? 'bg-orange-500 text-white' : 'text-gray-500 hover:bg-gray-50'}`
@@ -54,6 +58,9 @@ export default function UdharPage() {
     <div className="space-y-2.5 text-[12px]">
       {toast && <div role="status" className="fixed right-4 top-16 z-50 rounded-md bg-gray-900 px-3 py-1.5 text-[12px] text-white shadow-lg">{toast}</div>}
       {q.error && <div className="flex items-center gap-3 rounded-lg bg-red-50 p-2 text-[12px] text-red-600"><span className="flex-1">{q.error}</span><button type="button" onClick={q.reload} className="font-medium underline">Retry</button></div>}
+
+      {/* universal customer search: any customer of this shop (with or without udhar) → their account page; unknown → Add Customer & Udhar */}
+      <CustomerSearch onAdd={(fresh) => setEntry({ customer: null, type: 'udhar', fresh, goto: true })} />
 
       {/* one row: 4 KPI cards + graph toggle */}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
