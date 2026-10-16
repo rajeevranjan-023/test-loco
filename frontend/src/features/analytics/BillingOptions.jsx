@@ -16,6 +16,24 @@ const FLAGS = [
   ['udhar', 'Udhar (credit)', 'Allow the whole bill on udhar'],
 ]
 
+// Study centre: the 7 things a bill can contain, each with its own switch (server: cfg.billingItems, saved per centre in the database).
+const STUDY_GENERIC = ['discount', 'tax', 'editRate', 'partialPayment', 'udhar'] // the rest of FLAGS (products, services…) do not apply to a study centre
+const HINTS = { membership: 'Plans, renewals and seat booking', book: 'Books and study material', course: 'Course / class fees', fine: 'Late fee, lost book…', other: 'Anything else — one-off charges', registration: 'One-time admission fee', seat: 'Seat charge — can also book or keep the member’s seat' }
+export function Switch({ on, label, onClick, disabled }) {
+  return <button type="button" role="switch" aria-checked={!!on} aria-label={label} disabled={disabled} onClick={onClick} className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-50 ${on ? 'bg-[#12A05C]' : 'bg-gray-300'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} /></button>
+}
+export function BillingItemsList({ items, caps, onToggle, busy }) {
+  return (
+    <ul className="divide-y divide-gray-100" aria-label="Billing items">
+      {items.map((it) => (
+        <li key={it.type} className="flex items-center gap-3 py-2">
+          <span className="flex-1 leading-tight"><span className="block text-[13.5px] font-medium">{it.label}</span><span className="text-[11.5px] text-gray-400">{HINTS[it.type] || ''}</span></span>
+          <Switch on={caps[it.key]} label={it.label} disabled={busy} onClick={() => onToggle(it.key)} />
+        </li>))}
+    </ul>
+  )
+}
+
 export default function BillingOptions({ cfg, onClose, onSaved }) {
   const [caps, setCaps] = useState(() => ({ ...cfg.capabilities }))
   const [ctx, setCtx] = useState(() => (cfg.capabilities.context || []).map((f) => ({ ...f })))
@@ -34,8 +52,14 @@ export default function BillingOptions({ cfg, onClose, onSaved }) {
   return (
     <Modal title="Billing options" onClose={onClose}>
       <p className="mb-3 text-[12.5px] text-gray-500">Choose what your bills can contain. The billing screen only shows what you turn on.</p>
+      {cfg.billingItems && (<>
+        <div className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-gray-500">Billing Items</div>
+        <BillingItemsList items={cfg.billingItems} caps={caps} onToggle={flip} />
+        {!cfg.billingItems.some((i) => caps[i.key]) && <p className="mt-1 text-[12px] text-amber-600">All items are off — the Billing page will have nothing to add until you turn one on.</p>}
+        <div className="mb-1 mt-4 text-[12px] font-semibold uppercase tracking-wide text-gray-500">Bill options</div>
+      </>)}
       <ul className="divide-y divide-gray-100">
-        {FLAGS.map(([k, label, hint]) => (
+        {FLAGS.filter(([k]) => !cfg.billingItems || STUDY_GENERIC.includes(k)).map(([k, label, hint]) => (
           <li key={k} className="flex items-center gap-3 py-2">
             <span className="flex-1 leading-tight"><span className="block text-[13.5px] font-medium">{label}</span><span className="text-[11.5px] text-gray-400">{hint}</span></span>
             <button type="button" role="switch" aria-checked={!!caps[k]} aria-label={label} onClick={() => flip(k)} className={`relative h-6 w-11 rounded-full transition ${caps[k] ? 'bg-[#12A05C]' : 'bg-gray-300'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${caps[k] ? 'left-[22px]' : 'left-0.5'}`} /></button>

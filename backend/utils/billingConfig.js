@@ -44,8 +44,16 @@ export function sanitizeCapabilities(input) {
 export function billingCapabilities(account, sellerType) {
   const base = DEFAULTS[sellerType] || DEFAULTS.service // (unknown type → service, as before)
   const caps = { ...base, ...sanitizeCapabilities(account?.billing?.capabilities) }
-  // a business must always be able to bill *something*: if everything was switched off, fall back to its defaults
-  if (!LINE_TYPES.some((t) => caps[TYPE_CAP[t]])) Object.assign(caps, Object.fromEntries(Object.values(TYPE_CAP).map((k) => [k, !!base[k]])))
+  // a shop / service must always be able to bill *something*: if everything was switched off, fall back to its defaults.
+  // A study centre's items are ALL optional ("Billing Items" in Settings) — switching every one off is honoured, and the billing screen says so.
+  if (sellerType !== 'study_center' && !LINE_TYPES.some((t) => caps[TYPE_CAP[t]])) Object.assign(caps, Object.fromEntries(Object.values(TYPE_CAP).map((k) => [k, !!base[k]])))
   return caps
 }
 export const enabledTypes = (caps) => LINE_TYPES.filter((t) => caps[TYPE_CAP[t]])
+
+// The study centre's switchable "Billing Items", in the order the Settings screen and the Billing page list them.
+export const STUDY_ITEM_TYPES = ['membership', 'book', 'course', 'fine', 'other', 'registration', 'seat']
+export const billingItemsOf = (sellerType, caps) => (sellerType === 'study_center'
+  ? STUDY_ITEM_TYPES.map((t) => ({ type: t, key: TYPE_CAP[t], label: addShort(sellerType, t), enabled: !!caps[TYPE_CAP[t]] }))
+  : null)
+const addShort = (sellerType, t) => ({ membership: 'Membership', book: 'Book / Material', course: 'Course Fee', fine: 'Fine', other: 'Other Charge', registration: 'Registration', seat: 'Seat Fee' }[t] || labelFor(sellerType, t))

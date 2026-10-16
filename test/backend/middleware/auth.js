@@ -1,0 +1,111 @@
+import crypto from 'node:crypto'
+import jwt from 'jsonwebtoken'
+import User from '../models/User.js'
+import RevokedToken from '../models/RevokedToken.js'
+import { findAccountByUser } from '../utils/accounts.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
+import { normalizeUsername } from '../utils/username.js'
+
+export const tokenHash = (token) => crypto.createHash('sha256').update(String(token)).digest('hex').slice(0, 40)
+export const isRevoked = async (token) => !!(await RevokedToken.exists({ hash: tokenHash(token) }))
+
+// _________________________________________________________________________________
+// =================================================================================
+
+const requireJwtSecret = () => { if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured') } // misconfiguration → logged 500, not a silent 401 for everyone
+const findUser = async (id) => {
+  try { return await User.findById(id) } catch (e) { if (e?.name === 'CastError') return null; throw e } // a malformed id inside a token = no such user
+}
+
+export const protect = asyncHandler(async (req, res, next) => {   // is user login or not, if yes then next() else return 401
+  const header = req.headers.authorization                       // Get the Authorization header from the req
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Not authorized, please log in.' })
+  }
+
+  requireJwtSecret()
+  const token = header.split(' ')[1]
+  let decoded
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET)
+  } catch {
+    return res.status(401).json({ message: 'Session expired or invalid, please log in again.', code: 'SESSION_EXPIRED' })
+  }
+  if (await isRevoked(token)) {   // logged out — a stale copy of this token must never restore the session
+    return res.status(401).json({ message: 'Session expired or invalid, please log in again.', code: 'SESSION_EXPIRED' })
+  }
+  const user = await findUser(decoded.id)
+  if (!user) {
+    return res.status(401).json({ message: 'User no longer exists.', code: 'SESSION_EXPIRED' })
+  }
+  req.user = user
+  next()
+})
+
+// _________________________________________________________________________________
+// =================================================================================
+
+export const optionalAuth = asyncHandler(async (req, res, next) => {
+  const header = req.headers.authorization
+  if (!header || !header.startsWith('Bearer ')) {
+    return next()
+  }
+  requireJwtSecret()
+  const token = header.split(' ')[1]
+  let decoded
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET)
+  } catch {
+    return next() // Invalid/expired token on a public route — just proceed as a guest.
+  }
+  // A database failure here is NOT "guest": it is rethrown (→ 503) so a logged-in user's action is never silently treated as anonymous.
+  const user = (await isRevoked(token)) ? null : await findUser(decoded.id)
+  if (user) req.user = user
+  next()
+})
+
+// _________________________________________________________________________________
+// =================================================================================
+
+export const requireSeller = asyncHandler(async (req, res, next) => {     //is user a seller or not
+  let owner = req.user
+  if (req.user.role === 'admin') {
+    const viewAs = normalizeUsername(req.headers['x-view-as'])
+    if (!viewAs) {
+      return res.status(400).json({ message: 'Admin requests to seller data must include the x-view-as header.' })
+    }
+    owner = await User.findOne({ username: viewAs })
+    if (!owner) return res.status(404).json({ message: 'No account with that username.' })
+  }
+
+  if (owner.role !== 'seller') {                   //seller can be,[service provide or shop owner]
+    return res.status(403).json({ message: 'Only sellers can access this. Finish "Start Yours" first.' })
+  }
+
+  const account = await findAccountByUser(owner._id, owner.sellerType) // sellerType → shop / service / study centre document
+
+  if (!account) {
+    return res.status(404).json({ message: 'Seller account not found.' })
+  }
+
+  req.sellerAccount = account           //data ko “aage pass” karne ke liye hai 
+  req.sellerType = owner.sellerType     // (middleware → controller)
+  next() 
+})
+// _________________________________________________________________________________
+// =================================================================================
+
+export const requireOwner = (param = 'username') => (req, res, next) => {
+  if (req.user?.role === 'admin') return next() // admin may open any username's pages
+  const target = normalizeUsername(req.params[param])
+  if (!req.user?.username || !target || req.user.username !== target) {
+    return res.status(403).json({ message: 'Only the owner of this shop can access this.' })
+  }
+  next()
+}
+
+import { capabilitiesOf } from '../utils/businessSchema.js'
+export const requireCapability = (cap) => (req, res, next) => {
+  if (!capabilitiesOf(req.sellerType, req.sellerAccount)[cap]) return res.status(403).json({ message: 'This feature is not available for your business type.' })
+  next()
+}

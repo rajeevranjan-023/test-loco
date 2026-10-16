@@ -49,12 +49,12 @@ const qtyText = (it) => { const t = typeOfItem(it); return t === 'product' || t 
 const defaultDiscountOf = (c) => { const k = c?.capabilities; return k?.discount && k.defaultDiscountEnabled && Number(k.defaultDiscountValue) > 0 ? { type: k.defaultDiscountType === 'percent' ? 'percent' : 'fixed', value: String(k.defaultDiscountValue) } : null }
 const DEFAULT_CFG = { capabilities: { products: true, partialPayment: true, udhar: true, context: [] }, lineTypes: [{ type: 'product', label: 'Product' }] }
 
-// Customer search only starts with enough input: name ≥ 2 characters · phone ≥ 3 digits. Below that → no request at all.
-const searchable = (q) => { const t = q.trim(); return /^[\d\s+-]+$/.test(t) ? t.replace(/\D/g, '').length >= 3 : t.length >= 2 }
+// Customer search only starts with enough input: name ≥ 2 characters · phone ≥ 3 digits (or 1 char for study centers to support seat numbers). Below that → no request at all.
+const searchable = (q, study = false) => { const t = q.trim(); if (study) return t.length >= 1; return /^[\d\s+-]+$/.test(t) ? t.replace(/\D/g, '').length >= 3 : t.length >= 2 }
 // A complete 10-digit number (optionally +91): nothing more will be typed, so its search goes out at once.
 const fullPhone = (q) => { const t = q.trim(); if (!/^[\d\s+-]+$/.test(t)) return false; let d = t.replace(/\D/g, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return d.length === 10 }
 // Keyboard (↑ ↓ Enter) only ever lands on the shop's own customers and "Create new". The global-directory suggestion is click-only; the "Searching…" row is inert.
-const canKey = (it) => !!it && (it.t === 'add' || (it.t === 'c' && it.c.source !== 'global'))
+const canKey = (it) => !!it && (it.t === 'add' || (it.t === 'c' && it.c.source !== 'global' && it.c.source !== 'empty_seat'))
 
 /* ───────── bill preview · share · print ───────── */
 // Every customer-facing output (80mm · A4 · WhatsApp · SMS · Telegram) renders from ONE customer-safe document — see billCore.buildDocument / billOutput.js.
@@ -107,7 +107,19 @@ export default function BillingPage() {
 
   // customer
   const [customer, setCustomer] = useState(null)
+  const [memberStatus, setMemberStatus] = useState(null)
+  const [seatErr, setSeatErr] = useState('')
   const [cq, setCq] = useState(''); const [cOpen, setCOpen] = useState(false); const [cIdx, setCIdx] = useState(0); const [custList, setCustList] = useState([]); const [custDone, setCustDone] = useState('') // custDone = the query whose results are on screen
+
+  useEffect(() => {
+    if (!customer?.id || !isStudy) { setMemberStatus(null); return }
+    let live = true
+    call('get', `/api/seller/study/members/by-customer/${customer.id}`)
+      .then((res) => { if (live && res?.found) setMemberStatus(res) })
+      .catch(() => { if (live) setMemberStatus(null) })
+    return () => { live = false }
+  }, [customer?.id, isStudy])
+
   // product row
   const [price, setPrice] = useState(''); const [sel, setSel] = useState(null); const [pq, setPq] = useState(''); const [pOpen, setPOpen] = useState(false); const [pIdx, setPIdx] = useState(-1); const [qty, setQty] = useState('1')
   const [items, setItems] = useState([])
@@ -122,7 +134,7 @@ export default function BillingPage() {
   const loadProducts = useCallback(() => call('get', '/api/seller/billing/products').then(setProducts).catch(() => {}), [])
   useEffect(() => { loadProducts(); focusSoon(refC) }, [loadProducts])
   const loadServices = useCallback(() => call('get', '/api/seller/billing/services').then(setServices).catch(() => {}), [])
-  useEffect(() => { call('get', '/api/seller/billing/config').then((c) => { setCfg(c); applyDefaultDiscount(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0].type)); if (c.capabilities.services || c.capabilities.labour) loadServices() }).catch(() => {}) }, [loadServices, applyDefaultDiscount])
+  useEffect(() => { call('get', '/api/seller/billing/config').then((c) => { setCfg(c); applyDefaultDiscount(c); setMode((m) => (c.lineTypes.some((t) => t.type === m) ? m : c.lineTypes[0]?.type || 'product')); if (c.capabilities.services || c.capabilities.labour) loadServices() }).catch(() => {}) }, [loadServices, applyDefaultDiscount])
   // opened from a member's page: /billing?member=<id>[&renew=1] → member pre-selected, and (renew) the next membership period pre-filled
   const preset = useRef(false)
   useEffect(() => {
@@ -152,7 +164,7 @@ export default function BillingPage() {
   useEffect(() => {
     if (customer) return
     const q = cq.trim()
-    if (!searchable(q)) { setCustList([]); setCustDone(''); return }
+    if (!searchable(q, isStudy)) { setCustList([]); setCustDone(''); return }
     const hit = custCache.current.get(q)
     if (hit) { setCustList(hit); setCustDone(q); return }
     let live = true
@@ -161,14 +173,14 @@ export default function BillingPage() {
       .catch(() => { if (live) { setCustList([]); setCustDone(q) } }), // a failed search must not leave an Enter waiting forever — the seller can still create the customer
     fullPhone(q) ? 0 : 120)
     return () => { live = false; clearTimeout(t) }
-  }, [cq, customer])
+  }, [cq, customer, isStudy])
   useEffect(() => { setCIdx(cq.trim() ? 0 : -1) }, [cq])
 
   // Rows: the shop's own customers → (global suggestion, name only) → "Create new". While the answer for the current text is
   // still on its way: no global row, no "Create new" row, just "Searching…" — so nothing can be picked from a half-finished search.
   const cItems = useMemo(() => {
     const q = cq.trim()
-    if (!searchable(q)) return [] // nothing typed (or too short) → no suggestions at all
+    if (!searchable(q, isStudy)) return [] // nothing typed (or too short) → no suggestions at all
     const pending = custDone !== q
     const own = custList.filter((c) => c.source !== 'global')
     const a = own.slice(0, 5).map((c) => ({ t: 'c', c }))
@@ -251,7 +263,7 @@ export default function BillingPage() {
   /* ───────── actions ───────── */
   const say = (kind, text, extra) => setToast({ kind, text, ...extra })
   const resetAll = useCallback((keepToast) => {
-    setCustomer(null); setCq(''); setSel(null); setPq(''); setQty('1'); setPrice(''); setItems([]); setMethod('Cash'); setRecv(null); setAdvFor(null); setOldPay(null); setCompFor(null); setRetMode('auto'); setRetCustom(''); setNotes(''); discTouched.current = false; applyDefaultDiscount(cfgRef.current); setSplitOn(false); setSplitAmts({ cash: '', upi: '', card: '' }); setEditKey(null); setMCharge('charged'); setCtxVals({}); setMode(types[0] || 'product'); setCOpen(true); setPOpen(false); setDraftId(null); custCache.current.clear()
+    setCustomer(null); setMemberStatus(null); setSeatErr(''); setCq(''); setSel(null); setPq(''); setQty('1'); setPrice(''); setItems([]); setMethod('Cash'); setRecv(null); setAdvFor(null); setOldPay(null); setCompFor(null); setRetMode('auto'); setRetCustom(''); setNotes(''); discTouched.current = false; applyDefaultDiscount(cfgRef.current); setSplitOn(false); setSplitAmts({ cash: '', upi: '', card: '' }); setEditKey(null); setMCharge('charged'); setCtxVals({}); setMode(types[0] || 'product'); setCOpen(true); setPOpen(false); setDraftId(null); custCache.current.clear()
     if (!keepToast) setToast(null)
     focusSoon(refC)
   }, [types, applyDefaultDiscount])
@@ -261,17 +273,18 @@ export default function BillingPage() {
     if (selecting.current) return
     selecting.current = true
     call('post', '/api/seller/billing/customers/select', { globalUserId: c.globalUserId, name: c.name, phone: c.phone })
-      .then((saved) => { custCache.current.clear(); setCustomer(saved); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP) })
+      .then((saved) => { custCache.current.clear(); setCustomer(saved); setMemberStatus(null); setSeatErr(''); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP) })
       .catch((e) => (e.status === 409 ? setAddOpen({ name: c.name, phone: c.phone, globalUserId: c.globalUserId, notice: e.message }) : say('err', e.message))) // name already used by another of this shop's customers → let the seller change it
       .finally(() => { selecting.current = false })
   }
   const pickCustomer = (it) => {
     if (!it) return say('err', tx('Select a customer from the list (↓ then Enter)'))
     if (it.t === 'wait') return
+    if (it.t === 'c' && it.c.source === 'empty_seat') return
     if (it.t === 'add') { const q = cq.trim(); return setAddOpen(/^\d+$/.test(q) ? { name: '', phone: q } : { name: q, phone: '' }) }
     const c = it.c
     if (c.source === 'global') return pickGlobal(c)
-    setCustomer(c); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP)
+    setCustomer(c); setMemberStatus(null); setSeatErr(''); setCq(''); setCOpen(false); setPOpen(true); focusSoon(refP)
   }
   const customerText = customer ? [customer.name, customer.phone, customer.udharDue ? `${tx('Udhar')}: ${rupee(customer.udharDue)}` : customer.credit ? `Advance: ${rupee(customer.credit)}` : ''].filter(Boolean).join('  |  ') : cq
 
@@ -299,9 +312,48 @@ export default function BillingPage() {
   // service · labour · other charge — one row each, never merged
   const addCharge = (c) => { setItems((l) => [...l, { key: `c:${Date.now()}:${l.length}`, type: c.type, name: c.name, price: c.rate, qty: c.qty, unit: c.unit, pricing: c.pricing, serviceId: c.serviceId || null, ...(c.charge && c.charge !== 'charged' ? { charge: c.charge } : {}) }]); chargeFocus.current?.() }
   // study-centre lines (membership · course fee · book · fine …): name + amount (+ plan / seat / slot / course in `meta`) — priced by the same engine
-  const addStudy = (c) => { setItems((l) => [...l, { key: `s:${Date.now()}:${l.length}`, type: c.type, name: c.name, price: c.rate, qty: 1, pricing: 'fixed', ...(c.meta ? { meta: c.meta } : {}) }]); chargeFocus.current?.() }
+  const addStudy = (c) => { setSeatErr(''); setItems((l) => [...l, { key: `s:${Date.now()}:${l.length}`, type: c.type, name: c.name, price: c.rate, qty: 1, pricing: 'fixed', ...(c.meta ? { meta: c.meta } : {}) }]); chargeFocus.current?.() }
+
+  const renewMembershipClick = () => {
+    if (!memberStatus?.membership) return
+    const o = memberStatus.renewalOffer
+    const plan = studyCat?.plans?.find((p) => p.key === o?.planKey)
+    addStudy({
+      type: 'membership',
+      name: `Membership – ${plan?.name || `${o?.months || 1} Month(s)`} (renewal)`,
+      rate: o?.price ?? plan?.price ?? 0,
+      meta: {
+        planKey: o?.planKey || plan?.key,
+        months: o?.months || plan?.months || 1,
+        renewsId: o?.renewsId,
+        ...(memberStatus.activeSeat ? {
+          seatId: memberStatus.activeSeat.seatId,
+          slot: memberStatus.activeSeat.slot?.fullDay ? { fullDay: true } : { start: memberStatus.activeSeat.slot.start, end: memberStatus.activeSeat.slot.end },
+          renewsId: memberStatus.activeSeat.assignmentId,
+        } : {})
+      }
+    })
+    say('ok', 'Membership renewal item added')
+  }
+
+  const renewSeatClick = () => {
+    if (!memberStatus?.activeSeat) return
+    addStudy({
+      type: 'seat',
+      name: `Seat Fee – ${memberStatus.activeSeat.name} (${memberStatus.activeSeat.slotLabel || 'Full Day'}) (renewal)`,
+      rate: 500,
+      meta: {
+        seatId: memberStatus.activeSeat.seatId,
+        slot: memberStatus.activeSeat.slot?.fullDay ? { fullDay: true } : { start: memberStatus.activeSeat.slot.start, end: memberStatus.activeSeat.slot.end },
+        months: 1,
+        renewsId: memberStatus.activeSeat.assignmentId,
+      }
+    })
+    say('ok', 'Seat renewal item added')
+  }
+
   const patchItem = (key, patch) => setItems((l) => l.map((x) => (x.key === key ? { ...x, ...patch } : x)))
-  const switchMode = (t) => { setMode(t); setSel(null); setPq(''); setPrice(''); setQty('1'); if (t === 'product' || t === 'material') { setPOpen(true); focusSoon(refP) } else setTimeout(() => chargeFocus.current?.(), 0) }
+  const switchMode = (t) => { setSeatErr(''); setMode(t); setSel(null); setPq(''); setPrice(''); setQty('1'); if (t === 'product' || t === 'material') { setPOpen(true); focusSoon(refP) } else setTimeout(() => chargeFocus.current?.(), 0) }
   const stepQty = (dir) => {
     if (isKg(sel)) { const cur = parseQ(sel, qty) || 1; const i = PRESETS.reduce((b, v, k) => (Math.abs(v - cur) < Math.abs(PRESETS[b] - cur) ? k : b), 0); setQty(fmtQ(sel, PRESETS[Math.max(0, Math.min(PRESETS.length - 1, i + dir))])) }
     else setQty(String(Math.max(1, (parseQ(sel, qty) || 1) + dir)))
@@ -355,7 +407,13 @@ export default function BillingPage() {
       resetAll(true); say('ok', `Bill ${id} generated · ${rupee(total)} · ${res.status}${st.creditUsed ? ` · Advance ${rupee(st.creditUsed)} used` : ''}${st.advanceAdded ? ` · ${rupee(st.advanceAdded)} added to Advance Balance` : ''}${nu ? ` · ${nu} new item${nu > 1 ? 's' : ''} sent to Inventory` : ''}`, { billId: res.billId })
       recent.reload(); loadProducts(); loadServices(); reloadStudyCat(); if (draftId) loadDrafts()
       return res
-    } catch (e) { lastErr.current = e.message || 'Could not save the bill'; say('err', lastErr.current) } finally { saving.current = false; setBusy(false) }
+    } catch (e) {
+      lastErr.current = e.message || 'Could not save the bill'
+      if (e.message && (e.message.includes('seat') || e.message.includes('Seat') || e.message.includes('slot'))) {
+        setSeatErr(e.message)
+      }
+      say('err', lastErr.current)
+    } finally { saving.current = false; setBusy(false) }
   }, [busy, items, balance, customer, received, billRecv, creditUsed, oldSettle, total, disc, discount, discountType, splitOn, splitList, caps, ctxVals, multi, method, returned, notes, draftId, resetAll, recent, loadProducts, loadServices, loadDrafts])
 
   /* ───────── drafts ───────── */
@@ -443,7 +501,7 @@ export default function BillingPage() {
       e.preventDefault()
       if (customer) { setCOpen(false); return focusSoon(refP) }
       const q = cq.trim()
-      if (searchable(q) && custDone !== q) { enterWait.current = q; return } // the search for this text is still running: never act on the old list or create anything yet
+      if (searchable(q, isStudy) && custDone !== q) { enterWait.current = q; return } // the search for this text is still running: never act on the old list or create anything yet
       pickCustomer(cItems[cAct])
     }
     else if (e.key === 'Escape') { e.preventDefault(); cOpen ? setCOpen(false) : escClear() }
@@ -524,10 +582,10 @@ export default function BillingPage() {
                 <div className="relative flex-1">
                   <input ref={refC} 
                     value={customerText} 
-                    placeholder={tx('Search customer by name or mobile…')} 
+                    placeholder={isStudy ? tx('Search member by name, mobile, or seat…') : tx('Search customer by name or mobile…')} 
                     autoComplete="off" 
                     aria-label="Customer"
-                    onChange={(e) => { if (customer) setCustomer(null); setCq(e.target.value); setCOpen(true) }} onFocus={(e) => { setCOpen(true); customer && e.target.select() }} onBlur={() => setCOpen(false)} onKeyDown={onCustKey}
+                    onChange={(e) => { if (customer) { setCustomer(null); setMemberStatus(null); setSeatErr('') } setCq(e.target.value); setCOpen(true) }} onFocus={(e) => { setCOpen(true); customer && e.target.select() }} onBlur={() => setCOpen(false)} onKeyDown={onCustKey}
                   
                   className={`${inp} pr-8 ${customer ? 'border-[#12A05C] bg-[#F4FBF7] font-medium' : cOpen ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`} />
                   <ChevronDown size={15} className="pointer-events-none absolute right-3 top-[11px] text-gray-500" />
@@ -535,13 +593,15 @@ export default function BillingPage() {
                     <ul ref={listC} className={dd} role="listbox">
                       {custDone === cq.trim() && !custList.length && <li className="px-3 py-1.5 text-[12.5px] text-gray-400">No result found</li>}
                       {cItems.map((it, i) => (
-                        <li key={it.t === 'c' ? it.c.id || `g${it.c.globalUserId}` : it.t} role="option" aria-selected={i === cAct} data-active={i === cAct} onMouseDown={(e) => { e.preventDefault(); pickCustomer(it) }} onMouseEnter={() => canKey(it) && setCIdx(i)}
-                          className={`flex items-center gap-3 px-3 py-1.5 text-[13px] ${it.t === 'wait' ? 'cursor-default text-gray-400' : 'cursor-pointer hover:bg-[#FFF4E8]'} ${i === cAct ? 'bg-[#FFF4E8]' : ''}`}>
+                        <li key={it.t === 'c' ? (it.c.id || `g${it.c.globalUserId}` || `empty-${it.c.seatName}`) : it.t} role="option" aria-selected={i === cAct} data-active={i === cAct} onMouseDown={(e) => { e.preventDefault(); pickCustomer(it) }} onMouseEnter={() => canKey(it) && setCIdx(i)}
+                          className={`flex items-center gap-3 px-3 py-1.5 text-[13px] ${it.t === 'wait' || (it.t === 'c' && it.c.source === 'empty_seat') ? 'cursor-default text-gray-400' : 'cursor-pointer hover:bg-[#FFF4E8]'} ${i === cAct ? 'bg-[#FFF4E8]' : ''}`}>
                           {it.t === 'wait' ? <span className="text-[12.5px]">Searching…</span>
                             : it.t === 'add' ? <span className="font-medium text-[#2F6FEB]">+ {tx('Create new customer')}{cq.trim() ? ` “${cq.trim()}”` : ''}</span>
+                            : it.c.source === 'empty_seat' ? <span className="text-[12.5px] italic text-gray-500">{it.c.seatName ? `Seat ${it.c.seatName}: ` : ''}{it.c.message || 'No active member assigned to this seat.'}</span>
                             : it.c.source === 'global' ? <span className="flex-1 font-medium text-[#4F46E5]" title="Already known on Loco — click to use this name (it is not selected automatically)">{it.c.name}</span>
                             : <><span className="flex-1 font-medium">{it.c.name}</span>
                             <span className="text-gray-500">{it.c.phone}</span>
+                            {it.c.seatName && <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[11px] font-medium text-orange-800">Seat {it.c.seatName}{it.c.slotLabel ? ` (${it.c.slotLabel})` : ''}</span>}
                             {it.c.udharDue > 0 && <span className="rounded bg-[#FFF1DC] px-1.5 py-0.5 text-[11px] text-[#E58A00]">{tx('Udhar')} {rupee(it.c.udharDue)}</span>}
                             {it.c.credit > 0 && <span className="rounded bg-[#E6F0FE] px-1.5 py-0.5 text-[11px] text-[#2F6FEB]">Advance {rupee(it.c.credit)}</span>}</>}
                         </li>))}
@@ -551,6 +611,60 @@ export default function BillingPage() {
                 {customer?.id && <button type="button" onClick={() => panel.open(customer.id)} title={`${tx('Customer')} history`} className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-[13px] font-medium text-gray-700 transition hover:border-orange-300 hover:text-orange-600"><History size={15} />History</button>}
                 <button type="button" onClick={() => setAddOpen({ name: '', phone: '' })} className="flex h-9 items-center gap-1.5 rounded-lg border border-[#BFD7FB] bg-[#F5F9FF] px-3.5 text-[13px] font-medium text-[#2F6FEB] transition hover:bg-[#EAF3FF]"><Plus size={15} />Add {tx('Customer')}</button>
               </div>
+
+              {isStudy && customer && memberStatus?.member && (
+                <div className="mt-2.5 rounded-lg border border-orange-200 bg-[#FFF9F3] p-2.5 text-[12.5px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {memberStatus.member.memberCode && <span className="font-semibold text-gray-800">#{memberStatus.member.memberCode}</span>}
+                      {memberStatus.membership ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-gray-600">Membership:</span>
+                          <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-medium ${
+                            memberStatus.membership.expired
+                              ? 'bg-red-100 text-red-700'
+                              : memberStatus.membership.daysLeft <= 7
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {memberStatus.membership.planName} · {memberStatus.membership.expired ? 'Expired' : `${memberStatus.membership.daysLeft}d left`}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 italic">No membership</span>
+                      )}
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-gray-600">Seat:</span>
+                        {memberStatus.activeSeat ? (
+                          <span className="rounded bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-800">
+                            {memberStatus.activeSeat.name} ({memberStatus.activeSeat.slotLabel || 'Full Day'})
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">None assigned</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {memberStatus.membership && types.includes('membership') && (
+                        <button type="button" onClick={renewMembershipClick} className="rounded border border-orange-300 bg-white px-2 py-1 text-[11.5px] font-medium text-orange-700 transition hover:bg-orange-50">
+                          + Renew Membership
+                        </button>
+                      )}
+                      {memberStatus.activeSeat && types.includes('seat') && (
+                        <button type="button" onClick={renewSeatClick} className="rounded border border-orange-300 bg-white px-2 py-1 text-[11.5px] font-medium text-orange-700 transition hover:bg-orange-50">
+                          + Renew Seat
+                        </button>
+                      )}
+                      {memberStatus.membership && memberStatus.activeSeat && types.includes('membership') && types.includes('seat') && (
+                        <button type="button" onClick={() => { renewMembershipClick(); renewSeatClick(); }} className="rounded bg-orange-500 px-2.5 py-1 text-[11.5px] font-medium text-white transition hover:bg-orange-600">
+                          + Renew Both
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {caps.context?.length > 0 && (
@@ -560,13 +674,22 @@ export default function BillingPage() {
               </div>)}
 
             <div className="mt-3 flex min-h-0 flex-1 flex-col border-t border-gray-100 pt-3">
-              <Step n={2} title={multi ? 'Add Item' : 'Add Product'} hint={multi ? '(pick what to add · Enter add — next row opens automatically)' : '(search · Enter select · Enter add — next row opens automatically)'}>
+              <Step n={2} title={multi ? 'Add Item' : isStudy && cfg.lineTypes[0] ? cfg.lineTypes[0].addLabel || `Add ${cfg.lineTypes[0].label}` : 'Add Product'} hint={multi ? '(pick what to add · Enter add — next row opens automatically)' : '(search · Enter select · Enter add — next row opens automatically)'}>
                 {multi && <div className="ml-1 flex flex-wrap gap-1.5">{types.map((t) => <button key={t} type="button" onClick={() => switchMode(t)} className={`flex h-7 items-center gap-1 rounded-md border px-2.5 text-[12px] transition ${mode === t ? 'border-orange-500 bg-orange-500 font-medium text-white' : 'border-gray-200 text-gray-700 hover:border-orange-300'}`}><Plus size={12} />{cfg.lineTypes.find((x) => x.type === t)?.addLabel || ADD_LABEL[t]}</button>)}</div>}
               </Step>
-              <div className="mt-2 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-                {/* left: product + qty (or service / labour / other-charge row) */}
-                <div>
-                  {STUDY_TYPES.includes(mode) && <StudyBillRow key={mode} type={mode} catalog={studyCat} focusRef={chargeFocus} onAdd={addStudy} onErr={(m) => say('err', m)} />}
+              {types.length === 0 ? (
+                <div className="my-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                  <p className="text-[14px] font-medium text-gray-700">All billing items are disabled</p>
+                  <p className="mt-1 text-[12.5px] text-gray-500">Enable at least one billing item type in Settings &gt; Billing Items to add items to a bill.</p>
+                  <button type="button" onClick={() => setOptionsOpen(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3.5 py-1.5 text-[12.5px] font-medium text-white transition hover:bg-orange-600">
+                    <Settings size={14} /> Open Billing Settings
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+                  {/* left: product + qty (or service / labour / other-charge row) */}
+                  <div>
+                    {STUDY_TYPES.includes(mode) && <StudyBillRow key={mode} type={mode} catalog={studyCat} memberStatus={memberStatus} seatErr={seatErr} focusRef={chargeFocus} onAdd={addStudy} onErr={(m) => say('err', m)} />}
                   {(mode === 'service' || mode === 'labour' || (mode === 'other' && !isStudy)) && <ChargeRow key={mode} type={mode} catalog={services.filter((x) => x.kind === mode)} focusRef={chargeFocus} onAdd={addCharge} onErr={(m) => say('err', m)} onRemoveCatalog={(id) => call('delete', `/api/seller/billing/services/${id}`).then(loadServices).catch(() => {})} />}
                   {(mode === 'product' || mode === 'material') && <>
                   <div className="flex flex-wrap items-end gap-2">
@@ -640,6 +763,7 @@ export default function BillingPage() {
                   </div>
                 </div>
               </div>
+            )}
             </div>
           </section>
 

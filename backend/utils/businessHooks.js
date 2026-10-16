@@ -1,14 +1,26 @@
 import mongoose from 'mongoose'
 import Course from '../models/Course.js'
+import Customer from '../models/Customer.js'
 import Enrollment from '../models/Enrollment.js'
 import Membership from '../models/Membership.js'
 import SeatAssignment from '../models/SeatAssignment.js'
 import StudyMember from '../models/StudyMember.js'
-import { ensureMember, createMembership, assertSlotFree, windowOf } from './studyService.js'
-import { normSlot } from './studyLogic.js'
+import { ensureMember, createMembership, applySeatLine, checkSeatRequest, latestMembership, windowOf, fail } from './studyService.js'
+import { normSlot, findConflict } from './studyLogic.js'
 
 const isId = (x) => mongoose.isValidObjectId(x)
-const fail = (status, message) => Object.assign(new Error(message), { status, expose: true })
+
+// The seat part of a Membership or Seat Fee line: { seatId, slot, replaceAssignmentId? }.
+// `replaceAssignmentId` is the member's OWN current assignment the seller explicitly chose to change (Billing: "Change seat").
+function seatMeta(m, account) {
+  if (!m.seatId) return { meta: {} }
+  if (!isId(m.seatId)) return { error: 'That seat could not be found.' }
+  const { slot, error } = normSlot(m.slot, windowOf(account))
+  if (error) return { error }
+  const out = { seatId: String(m.seatId), slot }
+  if (m.replaceAssignmentId) { if (!isId(m.replaceAssignmentId)) return { error: 'That seat assignment could not be found.' }; out.replaceAssignmentId = String(m.replaceAssignmentId) }
+  return { meta: out }
+}
 
 const studyHooks = {
   cleanMeta(item, type, account) {
@@ -20,13 +32,12 @@ const studyHooks = {
       const out = { planKey: plan?.key || String(m.planKey || ''), months }
       if (m.startDate && !Number.isNaN(+new Date(m.startDate))) out.startDate = new Date(m.startDate).toISOString()
       if (m.renewsId) { if (!isId(m.renewsId)) return { error: 'That membership could not be found.' }; out.renewsId = String(m.renewsId) }
-      if (m.seatId) {
-        if (!isId(m.seatId)) return { error: 'That seat could not be found.' }
-        const { slot, error } = normSlot(m.slot, windowOf(account))
-        if (error) return { error }
-        out.seatId = String(m.seatId); out.slot = slot
-      }
-      return { meta: out }
+      const sm = seatMeta(m, account); if (sm.error) return { error: sm.error }
+      return { meta: { ...out, ...sm.meta } }
+    }
+    if (type === 'seat') { // Seat Fee: a charge that may also book / keep / (on request) change the member's seat
+      const sm = seatMeta(m, account); if (sm.error) return { error: sm.error }
+      return { meta: sm.meta.seatId ? sm.meta : undefined }
     }
     if (type === 'course') {
       if (!isId(m.courseId)) return { meta: undefined } // a custom course fee without a catalogue course is allowed — it just creates no enrolment
@@ -35,22 +46,32 @@ const studyHooks = {
     return { meta: undefined }
   },
 
-  async validate({ account, lines }) {
-    const claimed = []
+  // Runs BEFORE anything is written: every seat / renewal problem is refused here with a clear message.
+  // (Seat assignment itself re-checks under a lock, so two requests that both pass this still cannot both win.)
+  async validate({ account, lines, customerName }) {
+    const name = String(customerName || '').trim()
+    const cust = name ? await Customer.findOne({ shopId: account._id, name }).lean() : null
+    const member = cust ? await StudyMember.findOne({ centerId: account._id, customerId: cust._id }).lean() : null
+
+    // renewals: must point at THIS member's latest membership (renewing an old one would extend the wrong dates)
     for (const l of lines) {
-      if (l.type !== 'membership' || !l.meta?.seatId) continue
-      const { slot } = await assertSlotFree(account, l.meta.seatId, l.meta.slot, null).catch(async (e) => {
-        // a renewal that keeps the member's own current seat is fine — it is that member's own assignment
-        if (e.status === 409 && l.meta.renewsId) {
-          const prev = await Membership.findOne({ _id: l.meta.renewsId, centerId: account._id }).lean()
-          const mine = prev && (await SeatAssignment.findOne({ centerId: account._id, seatId: l.meta.seatId, memberId: prev.memberId, releasedAt: null }).lean())
-          if (mine) return { slot: normSlot(l.meta.slot, windowOf(account)).slot }
-        }
-        throw e
-      })
-      for (const c of claimed) if (String(c.seatId) === String(l.meta.seatId) && slot.start < c.slot.end && c.slot.start < slot.end) throw fail(409, 'The same seat and time slot is on this bill twice.')
-      claimed.push({ seatId: l.meta.seatId, slot })
+      if (l.type !== 'membership' || !l.meta?.renewsId) continue
+      const prev = await Membership.findOne({ _id: l.meta.renewsId, centerId: account._id }).lean()
+      if (!prev || (member && String(prev.memberId) !== String(member._id))) throw fail(404, 'That membership could not be found.')
+      const latest = await latestMembership(account, prev.memberId).lean()
+      if (latest && String(latest._id) !== String(prev._id)) throw fail(409, 'This membership has already been renewed. Please refresh and renew the latest one.', 'MEMBERSHIP_ALREADY_RENEWED')
     }
+
+    // a member holds ONE seat: every seat-bearing line on this bill must name the same seat + slot
+    const asks = lines.filter((l) => l.meta?.seatId)
+    let first = null
+    for (const l of asks) {
+      const slot = normSlot(l.meta.slot, windowOf(account)).slot
+      if (!first) { first = { seatId: String(l.meta.seatId), slot, replace: l.meta.replaceAssignmentId || null }; continue }
+      if (first.seatId !== String(l.meta.seatId) || first.slot.start !== slot.start || first.slot.end !== slot.end) throw fail(409, 'Only one seat can be assigned to a member on one bill. Remove the extra seat from this bill.', 'MEMBER_HAS_SEAT')
+      first.replace = first.replace || l.meta.replaceAssignmentId || null
+    }
+    if (first) await checkSeatRequest(account, { member, seatId: first.seatId, slot: first.slot, replaceAssignmentId: first.replace })
   },
 
   async afterBill({ account, bill, lines, calc, customer }) {
@@ -66,8 +87,11 @@ const studyHooks = {
         const lineNet = Math.round(bill.totalAmount * share * 100) / 100
         await createMembership(account, {
           member, plan: { ...plan, months: l.meta.months, name: plan.name || l.name }, rate: l.rate, discount: lineDiscount, billId: bill.billId, paid: Math.max(Math.round((lineNet - pending) * 100) / 100, 0), pending,
-          seatId: l.meta.seatId || null, slot: l.meta.slot || null, renewsId: l.meta.renewsId || null, startDate: l.meta.startDate || null,
+          seatId: l.meta.seatId || null, slot: l.meta.slot || null, replaceAssignmentId: l.meta.replaceAssignmentId || null, renewsId: l.meta.renewsId || null, startDate: l.meta.startDate || null,
         })
+      } else if (l.type === 'seat' && l.meta?.seatId) {
+        const ms = await latestMembership(account, member._id).lean() // seat validity follows the membership; a Seat Fee never changes its dates
+        await applySeatLine(account, { member, seatId: l.meta.seatId, slot: l.meta.slot, membershipId: ms?._id || null, replaceAssignmentId: l.meta.replaceAssignmentId || null, billId: bill.billId })
       } else if (l.type === 'course' && l.meta?.courseId) {
         const course = await Course.findOne({ _id: l.meta.courseId, centerId: account._id }).lean()
         if (course) await Enrollment.updateOne({ centerId: account._id, courseId: course._id, memberId: member._id }, { $setOnInsert: { billId: bill.billId, enrolledAt: new Date(), status: 'enrolled' } }, { upsert: true })
@@ -75,12 +99,20 @@ const studyHooks = {
     }
   },
 
+  // A bill that failed half-way is rolled back EXACTLY: its memberships and seat assignments go, a seat it moved the member off is given back, and
+  // seat links go back to the membership they pointed at before.
   async undo({ account, billId }) {
-    const made = await Membership.find({ centerId: account._id, billId }).select('_id').lean()
-    if (made.length) {
-      await SeatAssignment.deleteMany({ centerId: account._id, membershipId: { $in: made.map((m) => m._id) }, releasedAt: null, startedAt: { $gte: new Date(Date.now() - 6e4) } })
-      await Membership.deleteMany({ centerId: account._id, billId })
+    const made = await Membership.find({ centerId: account._id, billId }).select('_id renewsId').lean()
+    const created = await SeatAssignment.find({ centerId: account._id, billId }).lean()
+    for (const a of created) {
+      await SeatAssignment.deleteOne({ _id: a._id })
+      if (a.replacesId) { // give the member their previous seat back — unless someone else has meanwhile taken an overlapping slot (then it stays released; never a double booking)
+        const old = await SeatAssignment.findOne({ _id: a.replacesId, centerId: account._id, releasedBy: 'reassigned' }).lean()
+        if (old && !findConflict(await SeatAssignment.find({ centerId: account._id, seatId: old.seatId, releasedAt: null }).lean(), old.slot)) await SeatAssignment.updateOne({ _id: old._id }, { $set: { releasedAt: null, releasedBy: null, releaseNote: '' } })
+      }
     }
+    for (const m of made) await SeatAssignment.updateMany({ centerId: account._id, membershipId: m._id }, { $set: { membershipId: m.renewsId || null } })
+    await Membership.deleteMany({ centerId: account._id, billId })
     await Enrollment.deleteMany({ centerId: account._id, billId })
   },
 

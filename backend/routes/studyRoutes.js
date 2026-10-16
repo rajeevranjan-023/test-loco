@@ -25,6 +25,8 @@ router.post('/members', S.createMember)
 router.get('/members/:id', S.memberDetail)
 router.patch('/members/:id', S.updateMember)
 router.get('/members/:id/renewal-offer', S.renewalOffer)
+router.get('/members/:id/billing-status', S.billingStatus)
+router.get('/seat-conflicts', S.seatConflictReport)
 
 router.get('/courses', S.listCourses)
 router.post('/courses', S.createCourse)

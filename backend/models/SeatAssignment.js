@@ -14,6 +14,8 @@ const assignmentSchema = new mongoose.Schema(
     releasedBy: { type: String, enum: ['owner', 'member', 'reassigned', null], default: null },
     releaseNote: { type: String, default: '', maxlength: 200 },
     releaseRequestedAt: { type: Date, default: null }, // the member asked to leave; the owner confirms by releasing
+    billId: { type: String, default: null },           // the bill that created this assignment (lets a failed bill be undone exactly)
+    replacesId: { type: mongoose.Schema.Types.ObjectId, ref: 'SeatAssignment', default: null }, // set when this assignment replaced (moved a member off) an earlier one
   },
   { timestamps: true }
 )

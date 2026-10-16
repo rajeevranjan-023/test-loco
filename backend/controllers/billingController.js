@@ -10,10 +10,13 @@ import { PHONE_RE, mostUsedName, totalUses, touchGlobalUser } from '../utils/glo
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { displayBillId } from '../utils/billId.js'
 import ServiceItem from '../models/ServiceItem.js'
-import { billingCapabilities, sanitizeCapabilities, enabledTypes, labelFor, addLabelFor } from '../utils/billingConfig.js'
+import { billingCapabilities, sanitizeCapabilities, enabledTypes, labelFor, addLabelFor, billingItemsOf } from '../utils/billingConfig.js'
 import { schemaFor, hasCapability } from '../utils/businessSchema.js'
 import { accountName } from '../utils/accounts.js'
 import StudyMember from '../models/StudyMember.js'
+import Seat from '../models/Seat.js'
+import SeatAssignment from '../models/SeatAssignment.js'
+import { slotLabel } from '../utils/studyLogic.js'
 import { hooksFor } from '../utils/businessHooks.js'
 import { r2 as round2, buildDocument, paymentStatusOf } from '../utils/billing.js'
 import { paymentsOf } from '../utils/billPayments.js'
@@ -45,24 +48,59 @@ const balancesOf = async (req, ids) => {
   return Object.fromEntries(led.map((u) => [String(u.customerId), u.totalAmount]))
 }
 
-// GET /api/seller/billing/customers?q=
+// GET /api/seller/billing/customers?q=   (also served at /api/customers/search — the Billing and Udhar type-aheads)
+// Name or mobile number — and, for a study centre, a SEAT NUMBER (exact, case-insensitive, e.g. "A12"): that finds the member(s) holding the seat
+// right now (active assignments only, this centre only). A seat that exists but has nobody on it returns one non-selectable marker row.
+const seatText = (a) => ({ assignmentId: a._id, seat: a.seatId?.name || '', slot: slotLabel(a.slot) })
 export const searchCustomers = asyncHandler(async (req, res) => {
   if (shopOnly(req, res)) return
   const q = String(req.query.q || '').trim().slice(0, 40)
   const phoneLike = /^[\d\s+-]+$/.test(q)
   let digits = q.replace(/\D/g, '')
   if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2)
-  if (phoneLike ? digits.length < PHONE_MIN : q.length < NAME_MIN) return res.json([])
+  const study = hasCapability(req.sellerType, 'seatManagement')
+  const seatQ = study && q.length >= 1 && q.length <= 24 ? q : ''
+  const nameOk = phoneLike ? digits.length >= PHONE_MIN : q.length >= NAME_MIN
+  if (!nameOk && !seatQ) return res.json([])
 
   const lq = q.toLowerCase()
   const filter = { shopId: sid(req), ...(phoneLike ? { phone: new RegExp(esc(digits)) } : { name: new RegExp(esc(q), 'i') }) }
-  const local = (await Customer.find(filter).limit(20).lean())
+  const found = nameOk ? await Customer.find(filter).limit(20).lean() : []
+  const local = found
     .sort((a, b) => Number(phoneLike ? b.phone.startsWith(digits) : b.name.toLowerCase().startsWith(lq)) - Number(phoneLike ? a.phone.startsWith(digits) : a.name.toLowerCase().startsWith(lq))
       || (b.usageCount || 0) - (a.usageCount || 0) || +new Date(b.lastBillAt || 0) - +new Date(a.lastBillAt || 0))
     .slice(0, MAX_SUGGESTIONS)
-  const askGlobal = phoneLike && PHONE_RE.test(digits) && !local.some((c) => c.phone === digits)
-  const [bal, g] = await Promise.all([balancesOf(req, local.map((c) => c._id)), askGlobal ? GlobalUser.findOne({ phone: digits }).lean() : null])
-  const out = local.map((c) => shape(c, bal))
+
+  // seat-number matches: seat → ACTIVE assignments (releasedAt null) → member → customer, all inside this centre
+  let seatHits = [], seatNote = null
+  if (seatQ) {
+    const seats = await Seat.find({ centerId: sid(req), name: new RegExp(`^${esc(seatQ)}$`, 'i') }).select('name').lean()
+    if (seats.length) {
+      const acts = await SeatAssignment.find({ centerId: sid(req), seatId: { $in: seats.map((x) => x._id) }, releasedAt: null }).populate('seatId', 'name').lean()
+      const mem = acts.length ? await StudyMember.find({ centerId: sid(req), _id: { $in: acts.map((x) => x.memberId) } }).select('customerId memberCode').lean() : []
+      const cust = mem.length ? await Customer.find({ shopId: sid(req), _id: { $in: mem.map((m) => m.customerId) } }).lean() : []
+      const cById = new Map(cust.map((c) => [String(c._id), c])), mById = new Map(mem.map((m) => [String(m._id), m]))
+      for (const a of acts) { const m = mById.get(String(a.memberId)), c = m && cById.get(String(m.customerId)); if (c) seatHits.push({ c, seat: seatText(a) }) }
+      if (!seatHits.length) seatNote = { source: 'seat', seat: seats[0].name, empty: true, message: 'No active member assigned to this seat.' }
+    }
+  }
+
+  const ids = [...new Set([...seatHits.map((h) => h.c), ...local].map((c) => String(c._id)))]
+  const [bal, g] = await Promise.all([balancesOf(req, ids), phoneLike && PHONE_RE.test(digits) && !local.some((c) => c.phone === digits) && nameOk ? GlobalUser.findOne({ phone: digits }).lean() : null])
+
+  // study centre: who they are (member ID) and where they sit — enough to tell two people with the same name apart
+  const info = new Map()
+  if (study && ids.length) {
+    const mem = await StudyMember.find({ centerId: sid(req), customerId: { $in: ids } }).select('customerId memberCode').lean()
+    const acts = mem.length ? await SeatAssignment.find({ centerId: sid(req), memberId: { $in: mem.map((m) => m._id) }, releasedAt: null }).populate('seatId', 'name').lean() : []
+    for (const m of mem) info.set(String(m.customerId), { memberCode: m.memberCode, seats: acts.filter((a) => String(a.memberId) === String(m._id)).map(seatText) })
+  }
+  const dress = (c, seat) => ({ ...shape(c, bal), ...(info.has(String(c._id)) ? info.get(String(c._id)) : {}), ...(seat ? { matchedSeat: seat } : {}) })
+
+  const out = [], seen = new Set()
+  for (const h of seatHits) if (!seen.has(String(h.c._id))) { seen.add(String(h.c._id)); out.push(dress(h.c, h.seat)) }
+  for (const c of local) if (!seen.has(String(c._id))) { seen.add(String(c._id)); out.push(dress(c)) }
+  if (seatNote) out.unshift(seatNote)
 
   const gName = g && mostUsedName(g)
   if (gName) out.push({ source: 'global', globalUserId: g._id, name: gName, phone: g.phone, exact: true })
@@ -210,7 +248,7 @@ const configOf = (req) => {
   const caps = billingCapabilities(req.sellerAccount, req.sellerType)
   const order = schemaFor(req.sellerType).billing.order, rank = (t) => (order.includes(t) ? order.indexOf(t) : 99)
   const on = enabledTypes(caps).sort((a, b) => rank(a) - rank(b))
-  return { capabilities: caps, lineTypes: on.map((t) => ({ type: t, label: labelFor(req.sellerType, t), addLabel: addLabelFor(req.sellerType, t) })), sellerType: req.sellerType, partyLabel: schemaFor(req.sellerType).billing.partyLabel, business: businessOf(req.sellerAccount, req.sellerType) }
+  return { capabilities: caps, lineTypes: on.map((t) => ({ type: t, label: labelFor(req.sellerType, t), addLabel: addLabelFor(req.sellerType, t) })), sellerType: req.sellerType, partyLabel: schemaFor(req.sellerType).billing.partyLabel, billingItems: billingItemsOf(req.sellerType, caps), business: businessOf(req.sellerAccount, req.sellerType) }
 }
 
 // GET /api/seller/billing/config — what this business can put on a bill (drives which "+ Add …" buttons exist)

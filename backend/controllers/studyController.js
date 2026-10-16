@@ -12,7 +12,7 @@ import Enrollment from '../models/Enrollment.js'
 import User from '../models/User.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { PHONE_RE, touchGlobalUser } from '../utils/globalUser.js'
-import { ensureMember, seatBoard, memberRows, assignSeat, assertSlotFree, releaseAssignment, duesOf, windowOf, fail } from '../utils/studyService.js'
+import { ensureMember, seatBoard, memberRows, assignSeat, releaseAssignment, duesOf, windowOf, fail, latestMembership, seatConflicts } from '../utils/studyService.js'
 import { studyDashboard, studyAnalytics } from '../utils/studyReports.js'
 import { buildSeatNames, normSlot, slotLabel, dueAge, memberStatus, renewalStart, addMonths, toMin } from '../utils/studyLogic.js'
 import { displayBillId } from '../utils/billId.js'
@@ -156,7 +156,8 @@ export const deleteSeat = asyncHandler(async (req, res) => {
 export const assignToSeat = asyncHandler(async (req, res) => {
   const member = await StudyMember.findOne({ _id: req.body.memberId, centerId: cid(req) })
   if (!member) return bad(res, 'Member not found.', 404)
-  const { assignment, seat } = await assignSeat(center(req), { seatId: req.params.id, member, slot: req.body.fullDay ? { fullDay: true } : req.body.slot, membershipId: req.body.membershipId || null })
+  // a member who already holds a seat is refused (409 MEMBER_HAS_SEAT) unless the owner explicitly says which assignment to change
+  const { assignment, seat } = await assignSeat(center(req), { seatId: req.params.id, member, slot: req.body.fullDay ? { fullDay: true } : req.body.slot, membershipId: req.body.membershipId || null, replaceIds: req.body.replaceAssignmentId ? [req.body.replaceAssignmentId] : [] })
   res.status(201).json({ assignmentId: assignment._id, seat: seat.name })
 })
 
@@ -181,10 +182,8 @@ export const reassign = asyncHandler(async (req, res) => {
   const c = center(req), old = await SeatAssignment.findOne({ _id: req.params.id, centerId: cid(req), releasedAt: null })
   if (!old) return bad(res, 'That seat assignment is not active.', 404)
   const member = await StudyMember.findById(old.memberId)
-  const slot = req.body.slot || old.slot
-  await assertSlotFree(c, req.body.seatId, slot)
-  await releaseAssignment(c, old._id, { by: 'reassigned', note: 'Moved to another seat' })
-  const { assignment, seat } = await assignSeat(c, { seatId: req.body.seatId, member, slot, membershipId: old.membershipId })
+  // the new spot is checked and written under a lock WITH the old one released in the same step — a refused move changes nothing
+  const { assignment, seat } = await assignSeat(c, { seatId: req.body.seatId, member, slot: req.body.slot || old.slot, membershipId: old.membershipId, replaceIds: [old._id] })
   res.json({ assignmentId: assignment._id, seat: seat.name })
 })
 
@@ -261,9 +260,28 @@ export const renewalOffer = asyncHandler(async (req, res) => {
   res.json({
     customerId: member.customerId, memberId: member._id, name: member.name, phone: member.phone,
     renewsId: prev._id, previousEnd: prev.endDate, newStart: start, planKey: plan?.key || '', months: prev.months, price: plan?.price ?? prev.amount, newEnd: addMonths(start, prev.months),
-    seat: seat ? { seatId: seat.seatId._id, name: seat.seatId.name, slot: seat.slot } : null,
+    seat: seat ? { assignmentId: seat._id, seatId: seat.seatId._id, name: seat.seatId.name, slot: seat.slot } : null,
   })
 })
+
+// GET /study/members/:id/billing-status — read-only: where this member stands RIGHT NOW (membership, seat, what a renewal would be). Drives the Billing screen's renewal buttons.
+export const billingStatus = asyncHandler(async (req, res) => {
+  const c = center(req), now = new Date(), member = await findMember(req, req.params.id, true)
+  if (!member) return bad(res, 'Member not found.', 404)
+  const [prev, active] = await Promise.all([latestMembership(c, member._id).lean(), SeatAssignment.find({ centerId: cid(req), memberId: member._id, releasedAt: null }).populate('seatId', 'name').lean()])
+  const plan = prev && (c.config.plans.find((p) => p.key === prev.planKey) || c.config.plans.find((p) => p.months === prev.months) || null)
+  const end = prev ? new Date(prev.endDate) : null, start = prev ? renewalStart(prev.endDate, now) : null
+  const seats = active.map((a) => ({ assignmentId: a._id, seatId: a.seatId?._id, name: a.seatId?.name || '', slot: a.slot, slotLabel: slotLabel(a.slot) }))
+  res.json({
+    memberId: member._id, customerId: member.customerId, memberCode: member.memberCode, name: member.name, phone: member.phone,
+    membership: prev ? { id: prev._id, planKey: prev.planKey, planName: prev.planName, months: prev.months, endDate: prev.endDate, expired: +end < +now, daysLeft: Math.ceil((+end - +now) / 864e5), dueSoon: +end >= +now && +end - +now <= 7 * 864e5 } : null,
+    renewal: prev ? { renewsId: prev._id, planKey: plan?.key || '', months: prev.months, planName: plan?.name || prev.planName, price: plan?.price ?? prev.amount, newStart: start, newEnd: addMonths(start, prev.months) } : null,
+    seat: seats[0] || null, seats, multipleSeats: seats.length > 1,
+  })
+})
+
+// GET /study/seat-conflicts — REPORT ONLY: members holding several seats / overlapping bookings that older versions allowed. Nothing is released or changed.
+export const seatConflictReport = asyncHandler(async (req, res) => res.json(await seatConflicts(center(req))))
 
 // ───────────────────────── courses ─────────────────────────
 const courseBody = (b) => ({ name: String(b.name || '').trim().slice(0, 80), description: String(b.description || '').slice(0, 500), duration: String(b.duration || '').trim().slice(0, 40), fee: Number(b.fee), instructor: String(b.instructor || '').trim().slice(0, 60), capacity: Math.max(Math.floor(Number(b.capacity) || 0), 0), status: b.status === 'inactive' ? 'inactive' : 'active' })
@@ -311,7 +329,7 @@ export const billingCatalog = asyncHandler(async (req, res) => {
   const c = center(req), [board, courses] = await Promise.all([seatBoard(c), Course.find({ centerId: cid(req), status: 'active' }).sort({ name: 1 }).lean()])
   res.json({
     window: board.window, timeSlots: c.config.timeSlots, plans: c.config.plans.filter((p) => p.active !== false),
-    seats: board.seats.filter((s) => s.state !== 'unavailable').map((s) => ({ id: s.id, name: s.name, zone: s.zoneName, state: s.state, busy: s.people.map((p) => ({ start: p.slot.start, end: p.slot.end, label: p.slotLabel })) })),
+    seats: board.seats.filter((s) => s.state !== 'unavailable').map((s) => ({ id: s.id, name: s.name, zone: s.zoneName, state: s.state, busy: s.people.map((p) => ({ start: p.slot.start, end: p.slot.end, label: p.slotLabel, memberId: p.memberId, assignmentId: p.assignmentId })) })),
     courses: courses.map((x) => ({ id: x._id, name: x.name, fee: x.fee })), materials: c.config.materials, chargeTypes: c.config.chargeTypes,
   })
 })

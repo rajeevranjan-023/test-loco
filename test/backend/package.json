@@ -1,0 +1,44 @@
+{
+  "name": "local-finder-backend",
+  "version": "1.0.0",
+  "description": "Local Finder API — Express + MongoDB (Mongoose)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node seed/seed.js",
+    "seed:demo": "node seed/seedDemo.js",
+    "test:unit": "node tests/billId.test.js && node tests/username.test.js && node tests/stock.test.js && node tests/billing.test.js && node tests/billing.output.test.js && node tests/cors.test.js && node tests/billing.series.test.js && node tests/billing.account.test.js",
+    "seed:home": "node seed/seedHome.js",
+    "seed:study": "node seed/seedStudyCenter.js",
+    "test:study": "node tests/study.logic.test.js && node tests/study.config.test.js && node tests/study.seed.test.js",
+    "test:udhar": "node tests/udhar.photos.test.js",
+    "test:billing": "node tests/billing.int.test.js && node tests/billing2.int.test.js",
+    "test:auth": "node tests/auth.int.test.js",
+    "e2e:server": "node tests/e2e-harness.js",
+    "seed:service": "node seed/seedServiceProvider.js",
+    "test:service": "node tests/service.seed.test.js && node tests/service.schema.test.js",
+    "test:smoke": "node tests/smoke.test.js",
+    "test:errors": "node tests/errors.test.js && node tests/db.resilience.test.js && node tests/session.logout.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "google-auth-library": "^11.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.10",
+    "streamifier": "^0.1.1"
+  },
+  "devDependencies": {
+    "mingo": "^7.2.4",
+    "mongodb-memory-server": "^11.3.0",
+    "nodemon": "^3.1.4"
+  }
+}
